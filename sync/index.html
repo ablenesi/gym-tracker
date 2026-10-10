@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Sync">
 <title>Gym Coach · Synced Tracker</title><meta name="robots" content="noindex">
 <style>
 :root{--teal:#0f766e;--teal2:#115e59;--tealL:#e6f4f1;--orange:#ea580c;--orangeL:#ffedd5;--ink:#1f2937;--mut:#64748b;--line:#e2e8f0;--bg:#f8fafc}
@@ -229,6 +236,13 @@ header h1{padding-right:150px}
 .today .tgoal{margin:0 2px 8px;font-size:12.5px;font-weight:700;color:#7c2d12;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:6px 10px}
 .addon{margin-top:8px;font-size:13px;line-height:1.35;color:#1e3a8a;background:#eff6ff;border-left:4px solid #3b82f6;border-radius:6px;padding:7px 9px}
 .wnote{margin:-2px 2px 10px;font-size:12.5px;font-weight:700;color:#1e3a8a;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:7px 10px}
+header{padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.saved{top:calc(14px + env(safe-area-inset-top,0px))}
+.instbtn{margin-left:8px;vertical-align:3px;font:inherit;font-size:11px;font-weight:700;letter-spacing:0;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 9px;cursor:pointer}
+.instbtn,.insthint{display:none}
+html.caninst .instbtn{display:inline-block}
+html.caninst.showhint .insthint{display:block}
+.insthint{margin:8px 12px 0;font-size:13px;font-weight:600;color:#134e4a;background:var(--tealL);border:1px solid #99f6e4;border-radius:10px;padding:8px 12px;text-align:center}
 </style>
 </head>
 <body>
@@ -252,10 +266,11 @@ header h1{padding-right:150px}
 <template id="appTpl">
 <header>
   <span class="saved" id="saved" title="Tap to sync now">Saved</span>
-  <h1>Gym Coach Tracker</h1>
+  <h1>Gym Coach Tracker<button type="button" class="instbtn" id="instBtn" aria-label="Install this tracker as an app">⬇ Install app</button></h1>
   <div class="sub">Synced · M/W/F lift · Tue Peloton · Thu yoga · Sat core</div>
   <nav><button data-v="sessions" class="on">Sessions</button><button data-v="progress">Progress</button><button data-v="help">How to use</button></nav>
 </header>
+<div class="insthint" id="instHint">Tap Share → Add to Home Screen</div>
 <main>
   <section class="view on" id="v-sessions">
     <div class="today" id="today"></div>
@@ -812,6 +827,23 @@ else{
   });
  });
 }
+})();
+</script>
+<script>
+(function(){
+ var web=/^https?:$/.test(location.protocol),de=document.documentElement,dp=null;
+ if(web&&"serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js",{scope:"./"}).catch(function(){});});
+ function standalone(){return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}
+ if(!web||standalone())return;
+ var ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ function off(){de.classList.remove("caninst","showhint");dp=null;}
+ window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();dp=e;de.classList.add("caninst");});
+ window.addEventListener("appinstalled",off);
+ if(ios)de.classList.add("caninst");
+ document.addEventListener("click",function(e){
+  if(!e.target.closest||!e.target.closest("#instBtn"))return;
+  if(dp){dp.prompt();dp.userChoice.then(function(r){if(r&&r.outcome==="accepted")off();dp=null;});}
+  else de.classList.toggle("showhint");});
 })();
 </script>
 </body>
