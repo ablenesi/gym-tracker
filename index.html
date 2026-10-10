@@ -96,6 +96,19 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
 .sug small{font-size:10.5px;font-weight:600;color:#c2410c;line-height:1.2}
 .sug.match{opacity:.5;border-style:solid;background:#fff}
 .sug:disabled{cursor:default;border-style:dotted}
+
+.wc{margin:0;border-bottom:1px solid #f1f5f9;background:#f8fafc}
+.wc>summary{list-style:none;cursor:pointer;padding:10px 14px;font-weight:700;font-size:14px;color:var(--teal);display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;user-select:none}
+.wc>summary::-webkit-details-marker{display:none}
+.wc>summary:after{content:"▾";font-size:12px;color:var(--mut)}
+.wc[open]>summary:after{content:"▴"}
+.wc>summary .wn{font-size:11.5px;font-weight:600;color:var(--mut);margin-left:auto}
+.wc ul{list-style:none;margin:0;padding:0 14px 10px}
+.wc li{margin:0}
+.wc label{display:flex;align-items:center;gap:10px;font-size:14px;padding:6px 0;cursor:pointer;min-height:36px}
+.wc input[type=checkbox]{width:20px;height:20px;min-height:0;flex:none;padding:0;margin:0;border-radius:6px;-webkit-appearance:auto;appearance:auto;accent-color:var(--teal);box-shadow:none}
+.wc input[type=checkbox]:checked+span{color:var(--mut);text-decoration:line-through}
+.wc.cd{border-bottom:0;border-top:1px solid #f1f5f9}
 </style>
 </head>
 <body>
@@ -224,6 +237,13 @@ function updateSug(row){var b=row.querySelector(".sug");if(!b)return;var ex=row.
 function updateAllSug(){document.querySelectorAll("#sessions .row").forEach(updateSug);}
 window.__gymSuggest=suggestCalc;
 
+
+var WU_FIRST={A:"leg press",B:"goblet squat",C:"hack squat"};
+var CD_EXTRA={A:["Quad stretch","Lat stretch / child's pose"],B:["Quad stretch","Overhead triceps + cross-body shoulder stretch"],C:["Glute stretch (figure-4)","Biceps wall stretch"]};
+function wcList(items){return '<ul>'+items.map(function(t){return '<li><label><input type="checkbox"><span>'+esc(t)+'</span></label></li>';}).join("")+'</ul>';}
+function warmupHTML(day,open){return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary>'+wcList(["5 min easy bike or rower","10 bodyweight squats","10 hip hinges","10 band pull-aparts (or arm swings)","10 arm circles each way","1 light warm-up set of "+(WU_FIRST[day]||"the first exercise")])+'</details>';}
+function cooldownHTML(day,open){return '<details class="wc cd"'+(open?' open':'')+'><summary>Cool-down stretches (~5 min, 30 s each)<span class="wn">ticks not saved</span></summary>'+wcList(["Hamstring stretch","Hip flexor stretch (kneeling lunge)","Chest doorway stretch","Calf stretch"].concat(CD_EXTRA[day]||[]))+'</details>';}
+
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function hintHTML(ex,target,date){
@@ -241,7 +261,7 @@ function renderSessions(){
   var col=!(isN||expandAll);
   h+='<div class="card'+(isN?' next':'')+(done?' done':'')+(col?' collapsed':'')+'" id="s'+i+'" data-i="'+i+'">';
   h+='<div class="chead"><div class="letter">'+s.day+'</div><div class="t"><div class="d">'+nice(s.date)+'</div><div class="s">Day '+s.day+' · '+s.ex.length+' exercises</div></div>';
-  h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div><div class="rows">';
+  h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div><div class="rows">'+warmupHTML(s.day,isN);
   s.ex.forEach(function(x){
    var e=get(s.date,x[0]),sv=(e.s!==undefined&&e.s!=="")?e.s:x[2];var plank=/seconds/.test(x[1]),lunge=/per leg/.test(x[1]);
    h+='<div class="row" data-ex="'+esc(x[0])+'" data-date="'+s.date+'"><div class="rtop"><span class="ex">'+esc(x[0])+'</span><span class="tg">Target '+esc(x[1].replace(/ \(.*\)/,""))+(plank?" (reps = seconds)":lunge?" (reps per leg)":"")+'</span>'+howBtn(x[0])+'</div>';
@@ -251,7 +271,7 @@ function renderSessions(){
    h+='<div><label>Sets</label><input data-f="s" inputmode="numeric" pattern="[0-9]*" value="'+esc(sv)+'"></div></div>';
    h+='<div class="notes"><input data-f="n" type="text" placeholder="Notes (optional)" value="'+esc(e.n||"")+'"></div></div>';
   });
-  h+='</div></div>';
+  h+=cooldownHTML(s.day,isN)+'</div></div>';
  });
  document.getElementById("sessions").innerHTML=h;
  updateAllSug();
