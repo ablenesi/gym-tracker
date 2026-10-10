@@ -85,7 +85,7 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
 .guide .mw video{width:100%;aspect-ratio:16/9;display:block;border-radius:10px;background:#0f172a;object-fit:cover}
 .guide .mw video[hidden]{display:none}
 .guide a.mwl.ph .tap{min-height:120px}
-a.mwl{position:relative;display:block;text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}a.mwl .tap{display:none}a.mwl.ph{background:var(--tealL);border:1.5px dashed var(--teal);border-radius:10px}a.mwl.ph video{display:none}a.mwl.ph .tap{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--teal);font-weight:800;font-size:13px;line-height:1.2;padding:6px;min-height:58px}
+a.mwl{position:relative;display:block;text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}a.mwl .tap{display:none}a.mwl.ph{background:var(--tealL);border:1.5px dashed var(--teal);border-radius:10px}a.mwl.ph video{display:none}a.mwl .vlab{position:absolute;top:0;left:0;right:0;z-index:1;background:rgba(15,23,42,.62);color:#fff;font-weight:800;font-size:13.5px;line-height:1.25;padding:6px 10px;border-radius:10px 10px 0 0;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.5)}a.mwl.ph .vlab{display:none}.tth a.mwl .vlab{font-size:10px;line-height:1.2;padding:2px 5px;border-radius:8px 8px 0 0}a.mwl.ph .tap{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--teal);font-weight:800;font-size:13px;line-height:1.2;padding:6px;min-height:58px}
 .guide .nolink{font-size:12.5px;color:var(--mut);margin-top:8px}
 .guide h5{margin:10px 0 3px;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
 .guide ul{margin:0;padding-left:18px;font-size:13px}.guide li{margin:2px 0}
@@ -181,20 +181,25 @@ a.mwl{position:relative;display:block;text-decoration:none;color:inherit;-webkit
 .tcard .tnote{font-size:13px;font-weight:700;margin:4px 0}
 .tcard .tip{font-size:12.5px;color:var(--mut);margin:4px 0}
 .tcard .tdone{font-weight:800;color:var(--teal);margin:2px 0 4px}
-.tcard .tnav{display:flex;align-items:center;gap:8px;margin-top:14px}
-.tcard .tnav button{min-height:48px;min-width:96px;font:inherit;font-weight:800;font-size:15px;border-radius:12px;padding:0 16px;cursor:pointer;border:1.5px solid var(--teal)}
+.tcard .tnav{display:flex;align-items:stretch;gap:6px;margin-top:6px}
+.tcard .tnav button{min-height:48px;flex:none;font:inherit;font-weight:800;font-size:14px;border-radius:12px;padding:0 11px;cursor:pointer;border:1.5px solid var(--teal);white-space:nowrap}
+.tcard .tpv{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:4px 6px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;min-height:48px}
+.tcard .tpvend{justify-content:center;color:var(--mut)}
+.tcard .tpth{width:52px;flex:none}.tcard .tpth video{width:52px;height:38px;border-radius:6px}.tcard .tpth a.mwl.ph .tap{min-height:38px;font-size:9px;padding:2px}
+.tcard .tpvt{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.2;cursor:pointer}
+.tcard .tpvt small{font-size:11px;color:#0f766e;font-weight:600}
+.tcard .tpvt b{font-size:13.5px;color:#134e4a;overflow-wrap:anywhere}
+.tcard .tpvend .tpvt{cursor:default;align-items:center}
 .tcard .tprev{background:#fff;color:var(--teal)}
 .tcard .tnext{margin-left:auto;background:var(--teal);color:#fff}
 .tcard .tnav button:disabled{opacity:.4;cursor:default}
-.tcard .tidx{flex:1;text-align:center;font-size:12.5px;font-weight:800;color:var(--mut)}
+.tcard .tidx{margin-top:14px;text-align:center;font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--mut)}
 .tcard .tgo{margin-top:12px;width:100%;font:inherit;font-weight:800;font-size:14px;color:#fff;background:var(--teal);border:0;border-radius:12px;min-height:44px;cursor:pointer}
 
 .flag{padding:8px 14px;font-size:13px;font-weight:700;line-height:1.35;border-bottom:1px solid var(--line)}
 .flag.jab{background:#fef3c7;color:#92400e}
 .flag.first{background:#e0f2fe;color:#075985}
 .tcard .flag{border:0;border-radius:9px;margin:6px 0 2px;padding:6px 9px;font-size:12.5px}
-.tlab .phl{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:none;color:#15803d;background:#dcfce7;border-radius:999px;padding:2px 9px;white-space:nowrap;align-self:flex-start}
-.tcard .tphase{margin-top:12px;font-size:13px;color:#166534;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:6px;padding:7px 9px}
 .wu .walk{margin:2px 0 4px;padding:0 14px;font-size:13px;line-height:1.35;color:#334155}
 .wc .wguide{display:inline-flex;align-items:center;min-height:44px;margin:0 14px 8px;font-size:13.5px;font-weight:700;color:#0369a1}
 .wc label{min-height:48px;gap:12px;padding:4px 0;-webkit-tap-highlight-color:transparent}
@@ -324,7 +329,7 @@ function howBtn(ex){return GUIDE[ex]?'<button class="howto" type="button" aria-e
 function guideHTML(ex){var g=GUIDE[ex];if(!g)return "";
  function li(a){return a.map(function(x){return "<li>"+esc(x)+"</li>";}).join("");}
  var v=g.video,h="",m=g.mw;
- if(m){var mu="https://musclewiki.com/exercise/"+m.slug;h+='<div class="mw"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the '+esc(g.title)+' animation page in a new tab"><video src="https://musclewiki.com'+m.v+'" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video><span class="tap">Tap to view animation</span></a></div>';}
+ if(m){var mu="https://musclewiki.com/exercise/"+m.slug;h+='<div class="mw"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the '+esc(g.title)+' animation page in a new tab"><video src="https://musclewiki.com'+m.v+'" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video><span class="vlab">'+esc(g.title)+'</span><span class="tap">Tap to view animation</span></a></div>';}
  h+='<div class="vid"><iframe loading="lazy" src="https://www.youtube-nocookie.com/embed/'+v.id+'?rel=0&amp;playsinline=1&amp;modestbranding=1" title="'+esc(v.title)+'" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
  h+='<div class="vcap">Video: “'+esc(v.title)+'” – '+esc(v.channel)+' · <a href="https://www.youtube.com/watch?v='+v.id+'" target="_blank" rel="noopener">open on YouTube</a></div>';
  var p=g.photo;
@@ -426,10 +431,10 @@ function cardioSummary(){var h='<div class="dtitle">Cardio, yoga &amp; core</div
  return h+'</div>';}
 
 var todayStep=null,todayOpen=true,todayIO=null,thumbIO=null;
-var TWU=[["5 min easy bike or rower","stationary-bike","/api-next/videos/male-Cardio-stationary-bike-side.mp4"],["10 bodyweight squats","bodyweight-squat","/api-next/videos/male-Bodyweight-bodyweight-squat-side.mp4"],["10 hip hinges","good-mornings","/api-next/videos/male-Bodyweight-good-mornings-side.mp4"],["10 band pull-aparts (or arm swings)","band-pull-apart","/api-next/videos/male-Band-band-pull-apart-front.mp4"],["10 arm circles each way","forward-arm-circle","/api-next/videos/male-Bodyweight-forward-arm-circle-front.mp4"]];
-function todayWarmupHTML(s,open){var first=s.ex[0][0],g=GUIDE[first],items=TWU.slice();items.push(["1 light warm-up set of "+(WU_FIRST[s.day]||first),g&&g.mw?g.mw.slug:null,g&&g.mw?g.mw.v:null]);
+var TWU=[["5 min easy bike or rower","stationary-bike","/api-next/videos/male-Cardio-stationary-bike-side.mp4","Easy bike"],["10 bodyweight squats","bodyweight-squat","/api-next/videos/male-Bodyweight-bodyweight-squat-side.mp4","Bodyweight squat"],["10 hip hinges","good-mornings","/api-next/videos/male-Bodyweight-good-mornings-side.mp4","Hip hinge"],["10 band pull-aparts (or arm swings)","band-pull-apart","/api-next/videos/male-Band-band-pull-apart-front.mp4","Band pull-apart"],["10 arm circles each way","forward-arm-circle","/api-next/videos/male-Bodyweight-forward-arm-circle-front.mp4","Arm circles"]];
+function todayWarmupHTML(s,open){var first=s.ex[0][0],g=GUIDE[first],items=TWU.slice();items.push(["1 light warm-up set of "+(WU_FIRST[s.day]||first),g&&g.mw?g.mw.slug:null,g&&g.mw?g.mw.v:null,first]);
  return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary><p class="walk">🚶 Walk to the gym from home: a brisk walk is a good start to your warm-up.</p><ul class="twl">'+items.map(function(it){var mu=it[1]?"https://musclewiki.com/exercise/"+it[1]:null;
-  return '<li><label><input type="checkbox"><span>'+esc(it[0])+'</span></label>'+(it[2]?'<div class="tth"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the animation page for '+esc(it[0])+' in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+it[2]+'" aria-hidden="true"></video><span class="tap">Tap to view animation</span></a></div>':'<div class="tth none">🏋️</div>')+'</li>';}).join("")+'</ul><a class="wguide" href="https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/" target="_blank" rel="noopener">Full warm-up guide (NHS) ↗</a></details>';}
+  return '<li><label><input type="checkbox"><span>'+esc(it[0])+'</span></label>'+(it[2]?'<div class="tth"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the animation page for '+esc(it[0])+' in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+it[2]+'" aria-hidden="true"></video><span class="vlab">'+esc(it[3]||it[0])+'</span><span class="tap">Tap to view animation</span></a></div>':'<div class="tth none">🏋️</div>')+'</li>';}).join("")+'</ul><a class="wguide" href="https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/" target="_blank" rel="noopener">Full warm-up guide (NHS) ↗</a></details>';}
 function watchThumbs(root){var vs=root.querySelectorAll(".tth video");
  vs.forEach(function(v){v.muted=true;v.addEventListener("error",function(){var a=v.closest("a.mwl");if(a)a.classList.add("ph");});});
  if(!("IntersectionObserver" in window)){vs.forEach(function(v){v.src=v.dataset.src;});return;}
@@ -443,16 +448,19 @@ function todayInfo(){var t=iso(new Date()),i=-1,j;for(j=0;j<SESS.length;j++)if(S
  return {i:j,lab:"Next session",note:note};}
 function exDone(s,x){var e=get(s.date,x[0]);if(num(e.r)===null)return false;if(x[0]==="Plank")return true;var L=lastWR(x[0],s.date),W=suggestCalc(x[0],x[1],L?L.w:null,L?L.r:null);return W.v==null||num(e.w)!==null;}
 function rowFor(date,ex){return document.querySelector('#sessions .row[data-date="'+date+'"][data-ex="'+String(ex).replace(/"/g,'\\"')+'"]');}
+function todayPreview(s,x){var ex=x[0],g=GUIDE[ex]||{},e=get(s.date,ex),L=lastWR(ex,s.date),W=suggestCalc(ex,x[1],L?L.w:null,L?L.r:null),w=num(e.w)!==null?num(e.w):(W?W.v:null),det=setsOf(e,ex,s.date)+' × '+x[1].replace(/ \(.*\)/,"");
+ if(w!=null&&ex!=="Plank")det+=' · '+w+' kg';
+ return '<div class="tpv">'+(g.mw?'<div class="tth tpth"><a class="mwl" href="https://musclewiki.com/exercise/'+g.mw.slug+'" target="_blank" rel="noopener" aria-label="Open the '+esc(ex)+' animation page in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+g.mw.v+'" aria-hidden="true"></video><span class="tap">Tap to view animation</span></a></div>':'')+'<span class="tpvt tpvgo" role="button" tabindex="0"><small>Up next:</small><b>'+esc(ex)+'</b><small>'+esc(det)+'</small></span></div>';}
 function tli(t){return '<li>'+esc(t)+'</li>';}
 function renderToday(){var el=document.getElementById("today");if(!el)return;var T=todayInfo();
  var old=el.querySelector(".tvid video");if(old)old.remove();var oldWu=el.querySelector(".twu .wu");if(oldWu)oldWu.remove();
  if(T.i<0){el.innerHTML='<div class="tlab"><span>'+T.lab+'</span></div>';return;}
- var s=SESS[T.i],h='<div class="tlab"><span>'+esc(T.lab)+' · '+esc(nice(s.date))+'</span>'+(T.note?'<span class="rest">'+esc(T.note)+'</span>':'')+'<span class="phl">Phase: '+esc(phaseInfo().label)+'</span></div>',body="",sub="";
+ var s=SESS[T.i],h='<div class="tlab"><span>'+esc(T.lab)+' · '+esc(nice(s.date))+'</span>'+(T.note?'<span class="rest">'+esc(T.note)+'</span>':'')+'</div>',body="",sub="";
  if(s.kind){var C=CARDIO[s.kind];sub='<div class="tt">'+esc(C.title)+'</div><div class="ts">'+esc(C.sub)+(sessionDone(s)?' · ✓ logged':'')+'</div>';
   body+=(C.ease&&s.week<=2?'<div class="ease">'+esc(C.ease)+'</div>':'')+'<ol class="tplan">'+C.steps.map(tli).join("")+'</ol>';
   if(s.kind==="K")body+='<div class="tnote">'+(s.week<=2?'2 rounds this week':'3 rounds')+' · rest 45–60 s between rounds</div>';
   if(C.tip)body+='<div class="tip">'+esc(C.tip)+'</div>';
-  body+='<div class="tphase">'+esc(phaseInfo().tip)+'</div>';body+='<button type="button" class="tgo" data-jump="'+T.i+'">Log this session ›</button>';
+  body+='<button type="button" class="tgo" data-jump="'+T.i+'">Log this session ›</button>';
  }else{var nx=null,n=0,N=s.ex.length,idx=-1;s.ex.forEach(function(x,k){if(exDone(s,x))n++;else if(!nx){nx=x;idx=k;}});
   var st=n===0?0:(idx<0?N+1:idx+1);
   if(todayStep&&todayStep.date===s.date){var P=todayStep;
@@ -464,17 +472,18 @@ function renderToday(){var el=document.getElementById("today");if(!el)return;var
   if(st>N)body+='<div class="tdone">✓ All exercises logged – nice work.</div>';
   else if(cx){var ex=cx[0],g=GUIDE[ex]||{},e=get(s.date,ex),sets=setsOf(e,ex,s.date),cdone=exDone(s,cx);
    body+='<div class="tnx"><div class="tnl">'+(cdone?'Logged ✓':(nx&&nx[0]===ex?'Next up':'Coming up'))+'</div><div class="tnn">'+esc(ex)+'</div><div class="tnr">'+sets+' × '+esc(cx[1].replace(/ \(.*\)/,""))+'</div></div>';
-   if(g.mw){var mu="https://musclewiki.com/exercise/"+g.mw.slug;body+='<div class="tvid" data-ex="'+esc(ex)+'"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the '+esc(ex)+' animation page in a new tab"><span class="vslot"></span><span class="tap">Tap to view animation</span></a></div>';}
+   if(g.mw){var mu="https://musclewiki.com/exercise/"+g.mw.slug;body+='<div class="tvid" data-ex="'+esc(ex)+'"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the '+esc(ex)+' animation page in a new tab"><span class="vslot"></span><span class="vlab">'+esc(ex)+'</span><span class="tap">Tap to view animation</span></a></div>';}
    body+='<div class="tchips" data-date="'+s.date+'" data-ex="'+esc(ex)+'"></div><div class="tlog"></div>';
    if(g.cues)body+='<div class="tcm"><h5>Form cues</h5><ul class="good">'+g.cues.map(tli).join("")+'</ul><h5>Common mistakes</h5><ul class="bad">'+g.mistakes.map(tli).join("")+'</ul></div>';}
-  body+='<div class="tnav" data-step="'+st+'" data-n="'+N+'"><button type="button" class="tprev"'+(st===0?' disabled':'')+'>← Back</button><span class="tidx">'+(st===0?'Warm-up':st>N?'All done ✓':'Exercise '+st+' of '+N)+'</span><button type="button" class="tnext"'+(st>=N?' disabled':'')+'>'+(st>=N?'Done':'Next →')+'</button></div>';
+  body+='<div class="tidx">'+(st===0?'Warm-up':st>N?'All done ✓':'Exercise '+st+' of '+N)+'</div><div class="tnav" data-step="'+st+'" data-n="'+N+'"><button type="button" class="tprev"'+(st===0?' disabled':'')+'>← Back</button>'+(st<N?todayPreview(s,s.ex[st]):'<div class="tpv tpvend"><span class="tpvt"><b>'+(st>N?'All done ✓':'Last exercise')+'</b></span></div>')+'<button type="button" class="tnext"'+(st>=N?' disabled':'')+'>'+(st>=N?'Done':'Next →')+'</button></div>';
   body+='<h5>Today’s exercises</h5><ul class="tlist">'+s.ex.map(function(x){var d=exDone(s,x),cur=cx&&x[0]===cx[0];return '<li class="'+(d?'d':'')+(cur?' cur':'')+'" data-jumpex="'+esc(x[0])+'"><span>'+(d?'✓ ':cur?'▶ ':'')+esc(x[0])+'</span><span class="mut">'+setsOf(get(s.date,x[0]),x[0],s.date)+' × '+esc(x[1].replace(/ \(.*\)/,""))+'</span></li>';}).join("")+'</ul>';
-  body+='<div class="tphase">'+esc(phaseInfo().tip)+'</div>';body+='<button type="button" class="tgo" data-jump="'+T.i+'">Open full session ›</button>';}
+  body+='<button type="button" class="tgo" data-jump="'+T.i+'">Open full session ›</button>';}
  h+='<div class="tcard'+(s.kind?' k'+s.kind:'')+'" data-i="'+T.i+'"><div class="thead" data-jump="'+T.i+'"><div class="letter">'+s.day+'</div><div class="tb">'+sub+'</div><button type="button" class="ttog" aria-label="'+(todayOpen?'Collapse':'Expand')+' today card" aria-expanded="'+todayOpen+'">'+(todayOpen?'▴':'▾')+'</button></div>'+specialHTML(s)+'<div class="tbody"'+(todayOpen?'':' hidden')+'>'+body+'</div></div>';
  el.innerHTML=h;
  var tw=el.querySelector(".twu");if(tw){var wu=(oldWu&&oldWu.dataset.date===tw.dataset.date)?oldWu:null;
   if(!wu){var tmp=document.createElement("div");tmp.innerHTML=todayWarmupHTML(s,true);wu=tmp.firstChild;wu.dataset.date=tw.dataset.date;watchThumbs(wu);}
   tw.querySelector(".wslot").replaceWith(wu);}
+ var pv=el.querySelector(".tpv .tth");if(pv)watchThumbs(pv.parentNode);
  var tv=el.querySelector(".tvid");
  if(tv){var exn=tv.dataset.ex,v;if(old&&old.dataset.ex===exn)v=old;else{v=document.createElement("video");v.muted=true;v.loop=true;v.playsInline=true;v.autoplay=true;v.setAttribute("muted","");v.setAttribute("playsinline","");v.preload="auto";v.dataset.ex=exn;v.setAttribute("aria-hidden","true");v.src="https://musclewiki.com"+GUIDE[exn].mw.v;
    v.addEventListener("error",function(){var a=v.closest("a.mwl");if(a)a.classList.add("ph");});}
@@ -496,7 +505,7 @@ function jumpTo(i){var s=SESS[i],card=document.getElementById("s"+i);if(!card)re
 function todayClick(ev){var el=document.getElementById("today"),t=ev.target;
  var tc=t.closest(".tchip");if(tc){var c=el.querySelector(".tchips"),r=rowFor(c.dataset.date,c.dataset.ex),b=r&&r.querySelector(tc.dataset.src);if(b&&!b.disabled)b.click();return;}
  if(t.closest(".ttog")){todayOpen=!todayOpen;renderToday();return;}
- var nb=t.closest(".tprev,.tnext");if(nb){if(nb.disabled)return;var nv=nb.closest(".tnav"),cs=SESS[+el.querySelector(".tcard").dataset.i],N=+nv.dataset.n,cur=+nv.dataset.step,ns=nb.classList.contains("tnext")?Math.min(cur+1,N):(cur>N?N:Math.max(cur-1,0));
+ var nb=t.closest(".tprev,.tnext,.tpvgo");if(nb){if(nb.disabled)return;var nv=nb.closest(".tnav"),cs=SESS[+el.querySelector(".tcard").dataset.i],N=+nv.dataset.n,cur=+nv.dataset.step,ns=!nb.classList.contains("tprev")?Math.min(cur+1,N):(cur>N?N:Math.max(cur-1,0));
   todayStep={date:cs.date,step:ns,was:ns>=1&&ns<=N&&exDone(cs,cs.ex[ns-1])};renderToday();
   var c=el.querySelector(".tcard"),hh=(document.querySelector("header")||{offsetHeight:0}).offsetHeight,top=c.getBoundingClientRect().top;if(top<hh)window.scrollBy(0,top-hh-8);return;}
  if(t.closest("a"))return;
@@ -505,9 +514,6 @@ function todayClick(ev){var el=document.getElementById("today"),t=ev.target;
 var todayRaf=0;function todaySoon(){if(todayRaf)return;todayRaf=requestAnimationFrame(function(){todayRaf=0;renderToday();});}
 
 function stripNotes(es){es=es||{};Object.keys(es).forEach(function(k){var e=es[k];if(!e||typeof e!=="object")return;delete e.n;delete e.notes;if(!Object.keys(e).length)delete es[k];});return es;}
-var PHASE="bulking"; /* change to "maintenance" or "cutting" to switch the phase wording */
-var PHASES={bulking:{label:"Bulking",tip:"Bulking: eat in a small surplus with plenty of protein."},maintenance:{label:"Maintenance",tip:"Maintenance: eat around maintenance with plenty of protein."},cutting:{label:"Cutting",tip:"Cutting: eat in a small deficit and keep protein high."}};
-function phaseInfo(){return PHASES[PHASE]||PHASES.bulking;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function hintHTML(ex,target,date){
