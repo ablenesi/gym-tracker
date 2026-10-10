@@ -92,6 +92,11 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
 .guide .gm{font-size:13px}
 .guide a{color:#0369a1;font-size:12.5px;word-break:break-all}
 
+.sug{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin-top:6px;border:1.5px dashed var(--orange);background:var(--orangeL);color:#9a3412;font:inherit;font-weight:800;font-size:14px;line-height:1.15;border-radius:10px;padding:5px 8px;min-height:40px;cursor:pointer;text-align:left}
+.sug small{font-size:10.5px;font-weight:600;color:#c2410c;line-height:1.2}
+.sug.match{opacity:.5;border-style:solid;background:#fff}
+.sug:disabled{cursor:default;border-style:dotted}
+
 header h1{padding-right:150px}
 .saved{cursor:pointer}
 .saved.saving{background:rgba(255,255,255,.25)}
@@ -150,7 +155,7 @@ header h1{padding-right:150px}
       <li>For each exercise enter <b>Weight (kg)</b>, <b>Reps</b> (on your last, hardest set) and <b>Sets</b> (pre-filled with the target). Notes are optional.</li>
       <li><b>Plank:</b> Reps = seconds held, leave Weight blank. <b>Walking lunges:</b> Reps = per leg.</li>
       <li>Everything saves automatically and syncs to your private GitHub repo, so it shows up on every device you sign in on. It also works offline and syncs when you are back online.</li>
-      <li>The grey hint shows what you did last time. <span class="nudge">↑ add weight</span> means last time you hit the top of the rep range.</li>
+      <li>The grey hint shows what you did last time. The orange chip under Weight (Seconds for plank) is the <b>suggested next weight</b>: +2.5 kg on machines/cables or +2 kg per dumbbell when you hit the top of the range, the same weight when you're in range (or 1–2 reps short), and one step lighter if you fell further short. Tap it to fill the field, or type your own.</li>
     </ul></div>
     <div class="box"><h3>Progression rule (double progression)</h3><ul>
       <li>Work inside the target rep range (e.g. 3 × 8–12).</li>
@@ -253,13 +258,37 @@ function toggleGuide(btn){var row=btn.closest(".row"),p=row.querySelector(".guid
  if(!p.innerHTML)p.innerHTML=guideHTML(row.dataset.ex);
  p.hidden=!p.hidden;btn.setAttribute("aria-expanded",String(!p.hidden));btn.textContent=p.hidden?"How to ▾":"Hide ▴";}
 
+
+var SUG_DB={"Dumbbell Romanian deadlift":1,"Goblet squat":1,"Incline dumbbell press":1,"Chest-supported row":1,"Walking lunges":1};
+var SUG_START={"Leg press":20,"Chest press machine":15,"Seated cable row":20,"Dumbbell Romanian deadlift":8,"Plank":20,"Goblet squat":8,"Lat pulldown":20,"Seated shoulder press machine":10,"Lying leg curl":10,"Cable crunch":15,"Hack squat (or leg press)":10,"Incline dumbbell press":6,"Chest-supported row":8,"Walking lunges":null,"Cable bicep curl":7.5,"Tricep pushdown":10};
+function sugRange(t){var m=String(t).match(/(\d+)\s*-\s*(\d+)/);if(m)return [+m[1],+m[2]];m=String(t).match(/(\d+)/);return m?[+m[1],+m[1]]:[8,12];}
+function sugTarget(ex){for(var i=0;i<ORDER.length;i++)if(ORDER[i].name===ex)return ORDER[i].target;return "8-12";}
+function r2(x){return Math.round(x*100)/100;}
+function suggestCalc(ex,target,lw,lr){
+ var rg=sugRange(target),db=!!SUG_DB[ex],inc=db?2:2.5,min=db?2:5;
+ if(ex==="Plank"){if(lr==null)return {v:SUG_START.Plank,why:"start",f:"r"};return lr>=rg[1]?{v:lr+5,why:"+5 s: held "+lr+" s",f:"r"}:{v:lr,why:"repeat",f:"r"};}
+ if(lw==null||lr==null){var st=SUG_START[ex];return st==null?{v:null,why:"start: bodyweight",f:"w"}:{v:st,why:"start",f:"w"};}
+ if(lr>=rg[1])return {v:r2(lw+inc),why:"+"+inc+": hit "+lr+" last time",f:"w"};
+ if(lr>=rg[0]||rg[0]-lr<=2)return {v:lw,why:"repeat",f:"w"};
+ return {v:lw<=min?lw:r2(Math.max(min,lw-inc)),why:"ease off",f:"w"};
+}
+function lastWR(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),w=num(e.w),r=num(e.r);if(r!==null&&(ex==="Plank"||w!==null))best={w:w,r:r};}});return best;}
+function updateSug(row){var b=row.querySelector(".sug");if(!b)return;var ex=row.dataset.ex,L=lastWR(ex,row.dataset.date),S=suggestCalc(ex,sugTarget(ex),L?L.w:null,L?L.r:null);
+ var inp=row.querySelector('input[data-f="'+S.f+'"]'),unit=S.f==="r"?" s":" kg";
+ b.dataset.f=S.f;b.dataset.v=S.v==null?"":String(S.v);
+ var match=S.v!=null&&inp&&num(inp.value)===S.v;
+ b.disabled=S.v==null;
+ b.innerHTML=(S.v==null?"→ bodyweight":(match?"✓ ":"→ ")+S.v+unit)+"<small>"+esc(S.why)+"</small>";
+ b.classList.toggle("match",!!match);b.setAttribute("aria-label",S.v==null?"Suggested: bodyweight":"Use suggested "+S.v+unit+" ("+S.why+")");b.hidden=false;}
+function updateAllSug(){document.querySelectorAll("#sessions .row").forEach(updateSug);}
+window.__gymSuggest=suggestCalc;
+
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function hintHTML(ex,target,date){
  var L=lastBefore(ex,date);if(!L)return '<span class="mut">No previous entry</span>';
  var w=num(L.e.w),r=num(L.e.r),s=num(L.e.s);var plank=/seconds/.test(target);
  var txt="Last ("+ddmmyyyy(L.date).slice(0,5)+"): <b>"+(w!==null?w+" kg":"BW")+(r!==null?" × "+r+(plank?" s":""):"")+"</b>"+(s!==null?" · "+s+" sets":"");
- var top=topOf(target);if(r!==null&&top!==null&&r>=top)txt+='<span class="nudge">↑ '+(plank?"hold longer":"add weight")+'</span>';
  return txt;
 }
 var NI=nextIdx(),expandAll=false;
@@ -276,16 +305,17 @@ function renderSessions(){
    var e=get(s.date,x[0]),sv=(e.s!==undefined&&e.s!=="")?e.s:x[2];var plank=/seconds/.test(x[1]),lunge=/per leg/.test(x[1]);
    h+='<div class="row" data-ex="'+esc(x[0])+'" data-date="'+s.date+'"><div class="rtop"><span class="ex">'+esc(x[0])+'</span><span class="tg">Target '+esc(x[1].replace(/ \(.*\)/,""))+(plank?" (reps = seconds)":lunge?" (reps per leg)":"")+'</span>'+howBtn(x[0])+'</div>';
    h+='<div class="hint">'+hintHTML(x[0],x[1],s.date)+'</div><div class="guide" hidden></div><div class="inputs">';
-   h+='<div><label>Weight (kg)</label><input data-f="w" inputmode="decimal" placeholder="'+(plank?"BW":"kg")+'" value="'+esc(e.w||"")+'"'+(e.w?' class="filled"':'')+'></div>';
-   h+='<div><label>'+(plank?"Seconds":lunge?"Reps / leg":"Reps")+'</label><input data-f="r" inputmode="numeric" pattern="[0-9]*" placeholder="'+(plank?"s":"reps")+'" value="'+esc(e.r||"")+'"'+(e.r?' class="filled"':'')+'></div>';
+   h+='<div><label>Weight (kg)</label><input data-f="w" inputmode="decimal" placeholder="'+(plank?"BW":"kg")+'" value="'+esc(e.w||"")+'"'+(e.w?' class="filled"':'')+'>'+(plank?'':'<button class="sug" type="button" hidden></button>')+'</div>';
+   h+='<div><label>'+(plank?"Seconds":lunge?"Reps / leg":"Reps")+'</label><input data-f="r" inputmode="numeric" pattern="[0-9]*" placeholder="'+(plank?"s":"reps")+'" value="'+esc(e.r||"")+'"'+(e.r?' class="filled"':'')+'>'+(plank?'<button class="sug" type="button" hidden></button>':'')+'</div>';
    h+='<div><label>Sets</label><input data-f="s" inputmode="numeric" pattern="[0-9]*" value="'+esc(sv)+'"></div></div>';
    h+='<div class="notes"><input data-f="n" type="text" placeholder="Notes (optional)" value="'+esc(e.n||"")+'"></div></div>';
   });
   h+='</div></div>';
  });
  document.getElementById("sessions").innerHTML=h;
+ updateAllSug();
 }
-document.getElementById("sessions").addEventListener("click",function(ev){var hb=ev.target.closest(".howto");if(hb){toggleGuide(hb);return;}var hd=ev.target.closest(".chead");if(hd)hd.parentNode.classList.toggle("collapsed");});
+document.getElementById("sessions").addEventListener("click",function(ev){var sb=ev.target.closest(".sug");if(sb){if(sb.dataset.v!==""){var ri=sb.closest(".row").querySelector('input[data-f="'+sb.dataset.f+'"]');ri.value=sb.dataset.v;ri.dispatchEvent(new Event("input",{bubbles:true}));}return;}var hb=ev.target.closest(".howto");if(hb){toggleGuide(hb);return;}var hd=ev.target.closest(".chead");if(hd)hd.parentNode.classList.toggle("collapsed");});
 document.getElementById("sessions").addEventListener("input",function(ev){
  var inp=ev.target;if(!inp.dataset.f)return;var row=inp.closest(".row"),date=row.dataset.date,ex=row.dataset.ex,key=k(date,ex);
  var v=inp.value.trim();
@@ -295,7 +325,7 @@ document.getElementById("sessions").addEventListener("input",function(ev){
  // update badge + hints for this exercise
  var card=row.closest(".card"),s=SESS[+card.dataset.i],done=sessionDone(s),isN=+card.dataset.i===NI;
  card.classList.toggle("done",done);var b=card.querySelector(".badge");b.className="badge "+(done?"done":isN?"nx":"todo");b.textContent=done?"✓ Done":isN?"Next":"To do";
- document.querySelectorAll('.row[data-ex="'+ex.replace(/"/g,'\\"')+'"]').forEach(function(r){var tg=null;SESS.some(function(ss){return ss.ex.some(function(x){if(x[0]===ex){tg=x[1];return true;}});});r.querySelector(".hint").innerHTML=hintHTML(ex,tg,r.dataset.date);});
+ document.querySelectorAll('.row[data-ex="'+ex.replace(/"/g,'\\"')+'"]').forEach(function(r){var tg=null;SESS.some(function(ss){return ss.ex.some(function(x){if(x[0]===ex){tg=x[1];return true;}});});r.querySelector(".hint").innerHTML=hintHTML(ex,tg,r.dataset.date);updateSug(r);});
 });
 function stats(ex){
  var pts=[],n=0,best10=null,best=null;
@@ -366,7 +396,7 @@ function refreshUI(){
  var act=document.activeElement;
  document.querySelectorAll("#sessions .row").forEach(function(row){var ex=row.dataset.ex,e=get(row.dataset.date,ex);
   row.querySelectorAll("input[data-f]").forEach(function(inp){if(inp===act)return;var f=inp.dataset.f;var v=f==="s"?((e.s!==undefined&&e.s!=="")?e.s:defSets(ex)):(e[f]||"");if(inp.value!==String(v))inp.value=v;if(f==="w"||f==="r")inp.classList.toggle("filled",String(v)!=="");});
-  row.querySelector(".hint").innerHTML=hintHTML(ex,targetOf(ex),row.dataset.date);});
+  row.querySelector(".hint").innerHTML=hintHTML(ex,targetOf(ex),row.dataset.date);updateSug(row);});
  document.querySelectorAll("#sessions .card").forEach(function(card){var i=+card.dataset.i,s=SESS[i],done=sessionDone(s),isN=i===NI;card.classList.toggle("done",done);var b=card.querySelector(".badge");b.className="badge "+(done?"done":isN?"nx":"todo");b.textContent=done?"✓ Done":isN?"Next":"To do";});
  if(document.getElementById("v-progress").classList.contains("on"))renderProgress();
 }
