@@ -109,6 +109,16 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
 .wc input[type=checkbox]{width:20px;height:20px;min-height:0;flex:none;padding:0;margin:0;border-radius:6px;-webkit-appearance:auto;appearance:auto;accent-color:var(--teal);box-shadow:none}
 .wc input[type=checkbox]:checked+span{color:var(--mut);text-decoration:line-through}
 .wc.cd{border-bottom:0;border-top:1px solid #f1f5f9}
+
+.inputs.ps{grid-template-columns:1fr 0.8fr}
+.repcell{grid-column:1/-1}
+.rbw{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
+.rbw .rbx{width:56px;flex:none;text-align:center;padding:10px 4px}
+
+.rsug{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:auto;flex:1 1 110px;margin-top:0;min-height:46px;border:1.5px dashed var(--orange);background:var(--orangeL);color:#9a3412;font:inherit;font-weight:800;font-size:14px;line-height:1.15;border-radius:10px;padding:5px 8px;min-height:40px;cursor:pointer;text-align:left}
+.rsug small{font-size:10.5px;font-weight:600;color:#c2410c;line-height:1.2}
+.rsug.match{opacity:.5;border-style:solid;background:#fff}
+.rsug:disabled{cursor:default;border-style:dotted}
 </style>
 </head>
 <body>
@@ -133,6 +143,7 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
       <li><b>Plank:</b> Reps = seconds held, leave Weight blank. <b>Walking lunges:</b> Reps = per leg.</li>
       <li>Everything saves automatically on this device/browser. Use <b>Export</b> regularly as a backup, and <b>Import</b> to move to another phone or browser.</li>
       <li>The grey hint shows what you did last time. The orange chip under Weight (Seconds for plank) is the <b>suggested next weight</b>: +2.5 kg on machines/cables or +2 kg per dumbbell when you hit the top of the range, the same weight when you're in range (or 1–2 reps short), and one step lighter if you fell further short. Tap it to fill the field, or type your own.</li>
+      <li>Log reps <b>per set</b> in the small boxes (one per set; change Sets to add or remove boxes). The chip next to them suggests reps for each set: the top of the range for every set after you hit it on all sets (at the new weight), the same reps as last time when in range, one fewer per set if you were 3+ short, or the middle of the range the first time. The lowest set counts as the session's reps for progress and hints.</li>
     </ul></div>
     <div class="box"><h3>Progression rule (double progression)</h3><ul>
       <li>Work inside the target rep range (e.g. 3 × 8–12).</li>
@@ -152,7 +163,7 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
         <button class="btn" id="impBtn">Import JSON</button>
         <input type="file" id="impFile" accept="application/json,.json" style="display:none">
       </div>
-      <div class="mut" style="font-size:12px">CSV uses the same columns as the spreadsheet's Log sheet: Date, Day, Exercise, Target, Weight, Reps, Sets, Notes.</div>
+      <div class="mut" style="font-size:12px">CSV uses these columns: Date, Day, Exercise, Target, Weight, Reps (lowest set), Reps by set (e.g. 12/11/10), Sets, Notes – the spreadsheet's Log sheet columns plus Reps by set.</div>
       <div class="toolbar" style="margin-top:10px"><button class="btn warn" id="clearAll">Clear all data</button></div>
     </div>
   </section>
@@ -227,7 +238,7 @@ function suggestCalc(ex,target,lw,lr){
  return {v:lw<=min?lw:r2(Math.max(min,lw-inc)),why:"ease off",f:"w"};
 }
 function lastWR(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),w=num(e.w),r=num(e.r);if(r!==null&&(ex==="Plank"||w!==null))best={w:w,r:r};}});return best;}
-function updateSug(row){var b=row.querySelector(".sug");if(!b)return;var ex=row.dataset.ex,L=lastWR(ex,row.dataset.date),S=suggestCalc(ex,sugTarget(ex),L?L.w:null,L?L.r:null);
+function updateSug(row){updateRepSug(row);var b=row.querySelector(".sug");if(!b)return;var ex=row.dataset.ex,L=lastWR(ex,row.dataset.date),S=suggestCalc(ex,sugTarget(ex),L?L.w:null,L?L.r:null);
  var inp=row.querySelector('input[data-f="'+S.f+'"]'),unit=S.f==="r"?" s":" kg";
  b.dataset.f=S.f;b.dataset.v=S.v==null?"":String(S.v);
  var match=S.v!=null&&inp&&num(inp.value)===S.v;
@@ -244,12 +255,46 @@ function wcList(items){return '<ul>'+items.map(function(t){return '<li><label><i
 function warmupHTML(day,open){return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary>'+wcList(["5 min easy bike or rower","10 bodyweight squats","10 hip hinges","10 band pull-aparts (or arm swings)","10 arm circles each way","1 light warm-up set of "+(WU_FIRST[day]||"the first exercise")])+'</details>';}
 function cooldownHTML(day,open){return '<details class="wc cd"'+(open?' open':'')+'><summary>Cool-down stretches (~5 min, 30 s each)<span class="wn">ticks not saved</span></summary>'+wcList(["Hamstring stretch","Hip flexor stretch (kneeling lunge)","Chest doorway stretch","Calf stretch"].concat(CD_EXTRA[day]||[]))+'</details>';}
 
+
+function minR(a){var m=null;a.forEach(function(v){if(v!==null&&v!==undefined&&(m===null||v<m))m=v;});return m;}
+function rbStr(a){return a.some(function(v){return v!==null&&v!==undefined;})?a.map(function(v){return v==null?"":v;}).join("/"):"";}
+function rbArr(e,n){if(e.rb!=null&&e.rb!==""){var a=Array.isArray(e.rb)?e.rb:String(e.rb).split("/");return a.map(function(x){return num(x);});}
+ var r=num(e.r),out=[];if(r===null)return out;for(var i=0;i<(n||3);i++)out.push(r);return out;}
+function setsOf(e,ex){var n=num(e.s);n=n===null?defSets(ex):n;return Math.max(1,Math.min(10,Math.round(n)));}
+function repsMin(e){if(e.rb!=null&&e.rb!==""){var m=minR(rbArr(e,1));if(m!==null)return m;}return num(e.r);}
+function repsTxt(e,ex){var a=rbArr(e,setsOf(e,ex)).filter(function(v){return v!==null;});if(!a.length)return String(num(e.r));return a.every(function(v){return v===a[0];})?String(a[0]):a.join("/");}
+function boxHTML(i,v){return '<input class="rbx'+(v!==null&&v!==undefined&&v!==""?' filled':'')+'" inputmode="numeric" pattern="[0-9]*" placeholder="S'+(i+1)+'" aria-label="Set '+(i+1)+'" value="'+esc(v==null?"":v)+'">';}
+function boxesHTML(e,ex,n){var a=rbArr(e,n),h="";for(var i=0;i<n;i++)h+=boxHTML(i,a[i]);return h;}
+function lastReps(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),a=rbArr(e,setsOf(e,ex)),m=minR(a);if(m!==null)best={a:a,m:m};}});return best;}
+function suggestReps(ex,target,L,n){var rg=sugRange(target),out=[],i;
+ if(ex==="Plank"){var S=suggestCalc(ex,target,null,L?L.m:null);for(i=0;i<n;i++)out.push(S.v);return {vals:out,why:S.why};}
+ if(!L){var mid=Math.round((rg[0]+rg[1])/2);for(i=0;i<n;i++)out.push(mid);return {vals:out,why:"start: mid-range"};}
+ if(L.m>=rg[1]){for(i=0;i<n;i++)out.push(rg[1]);return {vals:out,why:"all sets hit "+rg[1]+": aim for "+rg[1]+" at the new weight"};}
+ var drop=L.m<rg[0]&&rg[0]-L.m>=3;
+ for(i=0;i<n;i++){var v=L.a.length?L.a[Math.min(i,L.a.length-1)]:null;if(v===null||v===undefined)v=L.m;out.push(drop?Math.max(1,v-1):v);}
+ return {vals:out,why:drop?"one fewer per set":L.m<rg[0]?"same reps, build up":"same reps as last time"};}
+function updateRepSug(row){var b=row.querySelector(".rsug");if(!b)return;var ex=row.dataset.ex,bx=row.querySelectorAll(".rbx"),n=bx.length,S=suggestReps(ex,sugTarget(ex),lastReps(ex,row.dataset.date),n);
+ var unit=ex==="Plank"?" s":" reps",same=S.vals.every(function(v){return v===S.vals[0];}),lab=same?S.vals[0]+unit:S.vals.join("/");
+ var match=n>0&&Array.prototype.every.call(bx,function(x,i){return num(x.value)===S.vals[i];});
+ b.dataset.vals=S.vals.join("/");b.innerHTML=(match?"✓ ":"→ ")+lab+"<small>"+esc(S.why)+"</small>";b.classList.toggle("match",match);b.hidden=false;b.setAttribute("aria-label","Use suggested "+lab+" ("+S.why+")");}
+function commitBoxes(row){var a=Array.prototype.map.call(row.querySelectorAll(".rbx"),function(x){x.classList.toggle("filled",x.value.trim()!=="");return num(x.value.trim());});
+ saveRB(k(row.dataset.date,row.dataset.ex),a);var m=minR(a),h=row.querySelector('input[data-f="r"]');h.value=m===null?"":String(m);h.dispatchEvent(new Event("input",{bubbles:true}));}
+function syncBoxes(row,force){var ex=row.dataset.ex,e=get(row.dataset.date,ex),si=row.querySelector('input[data-f="s"]'),n=setsOf({s:si?si.value:e.s},ex),w=row.querySelector(".rbw");if(!w)return;
+ var cur=w.querySelectorAll(".rbx"),act=document.activeElement;
+ if(cur.length!==n){var keep=Array.prototype.map.call(cur,function(x){return x.value;}),lost=keep.slice(n).some(function(v){return v.trim()!=="";});
+  if(!force&&!lost&&!e.rb&&num(e.r)!==null){keep=rbArr(e,n).map(function(v){return v==null?"":v;});}
+  Array.prototype.forEach.call(cur,function(x){x.remove();});var h="";for(var i=0;i<n;i++)h+=boxHTML(i,force?rbArr(e,n)[i]:keep[i]);w.insertAdjacentHTML("afterbegin",h);
+  if(lost&&!force)commitBoxes(row);return;}
+ if(force){var a=rbArr(e,n);Array.prototype.forEach.call(cur,function(x,i){if(x===act)return;var v=a[i]==null?"":String(a[i]);if(x.value!==v)x.value=v;x.classList.toggle("filled",v!=="");});}}
+function exportEntries(){var o={};Object.keys(state.entries).forEach(function(key){var e=state.entries[key],c={};Object.keys(e).forEach(function(f){c[f]=f==="rb"?rbArr(e,1):e[f];});o[key]=c;});return o;}
+function saveRB(key,a){var e=state.entries[key]||{};if(rbStr(a)==="")delete e.rb;else e.rb=a.slice();if(Object.keys(e).length)state.entries[key]=e;else delete state.entries[key];}
+
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function hintHTML(ex,target,date){
  var L=lastBefore(ex,date);if(!L)return '<span class="mut">No previous entry</span>';
  var w=num(L.e.w),r=num(L.e.r),s=num(L.e.s);var plank=/seconds/.test(target);
- var txt="Last ("+ddmmyyyy(L.date).slice(0,5)+"): <b>"+(w!==null?w+" kg":"BW")+(r!==null?" × "+r+(plank?" s":""):"")+"</b>"+(s!==null?" · "+s+" sets":"");
+ var txt="Last ("+ddmmyyyy(L.date).slice(0,5)+"): <b>"+(w!==null?w+" kg":"BW")+(r!==null?" × "+repsTxt(L.e,ex)+(plank?" s":""):"")+"</b>"+(s!==null?" · "+s+" sets":"");
  return txt;
 }
 var NI=nextIdx(),expandAll=false;
@@ -265,10 +310,10 @@ function renderSessions(){
   s.ex.forEach(function(x){
    var e=get(s.date,x[0]),sv=(e.s!==undefined&&e.s!=="")?e.s:x[2];var plank=/seconds/.test(x[1]),lunge=/per leg/.test(x[1]);
    h+='<div class="row" data-ex="'+esc(x[0])+'" data-date="'+s.date+'"><div class="rtop"><span class="ex">'+esc(x[0])+'</span><span class="tg">Target '+esc(x[1].replace(/ \(.*\)/,""))+(plank?" (reps = seconds)":lunge?" (reps per leg)":"")+'</span>'+howBtn(x[0])+'</div>';
-   h+='<div class="hint">'+hintHTML(x[0],x[1],s.date)+'</div><div class="guide" hidden></div><div class="inputs">';
+   h+='<div class="hint">'+hintHTML(x[0],x[1],s.date)+'</div><div class="guide" hidden></div><div class="inputs ps">';
    h+='<div><label>Weight (kg)</label><input data-f="w" inputmode="decimal" placeholder="'+(plank?"BW":"kg")+'" value="'+esc(e.w||"")+'"'+(e.w?' class="filled"':'')+'>'+(plank?'':'<button class="sug" type="button" hidden></button>')+'</div>';
-   h+='<div><label>'+(plank?"Seconds":lunge?"Reps / leg":"Reps")+'</label><input data-f="r" inputmode="numeric" pattern="[0-9]*" placeholder="'+(plank?"s":"reps")+'" value="'+esc(e.r||"")+'"'+(e.r?' class="filled"':'')+'>'+(plank?'<button class="sug" type="button" hidden></button>':'')+'</div>';
-   h+='<div><label>Sets</label><input data-f="s" inputmode="numeric" pattern="[0-9]*" value="'+esc(sv)+'"></div></div>';
+   h+='<div><label>Sets</label><input data-f="s" inputmode="numeric" pattern="[0-9]*" value="'+esc(sv)+'"></div>';
+   h+='<div class="repcell"><label>'+(plank?"Seconds per set":lunge?"Reps per set (per leg)":"Reps per set")+'</label><input type="hidden" data-f="r" value="'+esc(e.r||"")+'"><div class="rbw">'+boxesHTML(e,x[0],setsOf(e,x[0]))+'<button class="rsug" type="button" hidden></button></div></div></div>';
    h+='<div class="notes"><input data-f="n" type="text" placeholder="Notes (optional)" value="'+esc(e.n||"")+'"></div></div>';
   });
   h+=cooldownHTML(s.day,isN)+'</div></div>';
@@ -277,6 +322,11 @@ function renderSessions(){
  updateAllSug();
 }
 document.getElementById("sessions").addEventListener("click",function(ev){var sb=ev.target.closest(".sug");if(sb){if(sb.dataset.v!==""){var ri=sb.closest(".row").querySelector('input[data-f="'+sb.dataset.f+'"]');ri.value=sb.dataset.v;ri.dispatchEvent(new Event("input",{bubbles:true}));}return;}var hb=ev.target.closest(".howto");if(hb){toggleGuide(hb);return;}var hd=ev.target.closest(".chead");if(hd)hd.parentNode.classList.toggle("collapsed");});
+document.getElementById("sessions").addEventListener("input",function(ev){var t=ev.target,row=t.closest&&t.closest(".row");if(!row)return;
+ if(t.classList.contains("rbx")){commitBoxes(row);return;}
+ if(t.dataset.f==="s"){syncBoxes(row,false);updateRepSug(row);}});
+document.getElementById("sessions").addEventListener("click",function(ev){var b=ev.target.closest(".rsug");if(!b)return;var row=b.closest(".row"),v=(b.dataset.vals||"").split("/");
+ row.querySelectorAll(".rbx").forEach(function(x,i){if(v[i]!==undefined&&v[i]!=="")x.value=v[i];});commitBoxes(row);});
 document.getElementById("sessions").addEventListener("input",function(ev){
  var inp=ev.target;if(!inp.dataset.f)return;var row=inp.closest(".row"),date=row.dataset.date,ex=row.dataset.ex,key=k(date,ex);
  var e=state.entries[key]||{};var v=inp.value.trim();
@@ -292,7 +342,7 @@ document.getElementById("sessions").addEventListener("input",function(ev){
 });
 function stats(ex){
  var pts=[],n=0,best10=null,best=null;
- SESS.forEach(function(s){var e=get(s.date,ex);if(!logged(e))return;n++;var w=num(e.w),r=num(e.r);
+ SESS.forEach(function(s){var e=get(s.date,ex);if(!logged(e))return;n++;var w=num(e.w),r=repsMin(e);
   if(w!==null){pts.push({d:s.date,w:w});if(best===null||w>best)best=w;if(r!==null&&r>=10&&(best10===null||w>best10))best10=w;}});
  var first=pts.length?pts[0].w:null,latest=pts.length?pts[pts.length-1].w:null;
  return {n:n,first:first,latest:latest,best10:best10,best:best,change:(first!==null&&latest!==null)?Math.round((latest-first)*100)/100:null,pts:pts};
@@ -320,7 +370,7 @@ function renderProgress(){
   });
  });
  t+='</tbody></table>';
- document.getElementById("progress").innerHTML='<p class="mut" style="font-size:12px;margin:4px 2px 10px">Weights in kg. Same rules as the spreadsheet: a session counts when weight or reps is logged; “Best 10+ reps” uses only entries with 10 or more reps.</p>'+t+'<div class="pcards">'+c+'</div>';
+ document.getElementById("progress").innerHTML='<p class="mut" style="font-size:12px;margin:4px 2px 10px">Weights in kg. Same rules as the spreadsheet: a session counts when weight or reps is logged; “Best 10+ reps” uses only sessions where every set reached 10+ reps (the lowest set counts).</p>'+t+'<div class="pcards">'+c+'</div>';
 }
 // Tabs
 document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){
@@ -336,12 +386,12 @@ document.getElementById("toggleAll").addEventListener("click",function(){expandA
 // Export/import
 function download(name,text,type){var b=new Blob([text],{type:type});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
 function csvCell(v){v=v===undefined||v===null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
-function buildCSV(){var L=["Date,Day,Exercise,Target,Weight (kg),Reps,Sets,Notes"];
- SESS.forEach(function(s){s.ex.forEach(function(x){var e=get(s.date,x[0]);L.push([ddmmyyyy(s.date),s.day,x[0],x[1],e.w||"",e.r||"",(e.s!==undefined&&e.s!=="")?e.s:x[2],e.n||""].map(csvCell).join(","));});});
+function buildCSV(){var L=["Date,Day,Exercise,Target,Weight (kg),Reps,Reps by set,Sets,Notes"];
+ SESS.forEach(function(s){s.ex.forEach(function(x){var e=get(s.date,x[0]);L.push([ddmmyyyy(s.date),s.day,x[0],x[1],e.w||"",e.r||"",rbStr(rbArr(e,setsOf(e,x[0]))),(e.s!==undefined&&e.s!=="")?e.s:x[2],e.n||""].map(csvCell).join(","));});});
  return L.join("\r\n");}
 window.__gym={buildCSV:buildCSV,stats:stats,SESS:SESS};
 document.getElementById("expCsv").addEventListener("click",function(){download("gym-log-"+iso(new Date())+".csv","\ufeff"+buildCSV(),"text/csv");});
-document.getElementById("expJson").addEventListener("click",function(){download("gym-tracker-"+iso(new Date())+".json",JSON.stringify({app:"gymcoach-tracker",version:1,exported:new Date().toISOString(),entries:state.entries},null,1),"application/json");});
+document.getElementById("expJson").addEventListener("click",function(){download("gym-tracker-"+iso(new Date())+".json",JSON.stringify({app:"gymcoach-tracker",version:1,exported:new Date().toISOString(),entries:exportEntries()},null,1),"application/json");});
 document.getElementById("impBtn").addEventListener("click",function(){document.getElementById("impFile").click();});
 document.getElementById("impFile").addEventListener("change",function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var p=JSON.parse(r.result);if(!p||typeof p.entries!=="object")throw 0;
  if(Object.keys(state.entries).length&&!confirm("Replace the data on this device with the imported file?"))return;
