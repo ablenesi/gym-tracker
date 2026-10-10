@@ -232,7 +232,7 @@ a.mwl{position:relative;display:block;text-decoration:none;color:inherit;-webkit
       <li>For each exercise enter <b>Weight (kg)</b>, <b>Reps</b> (on your last, hardest set) and <b>Sets</b> (pre-filled with the target).</li>
       <li><b>Plank:</b> Reps = seconds held, leave Weight blank. <b>Walking lunges:</b> Reps = per leg.</li>
       <li>Everything saves automatically on this device/browser. Use <b>Export</b> regularly as a backup, and <b>Import</b> to move to another phone or browser.</li>
-      <li>The grey hint shows what you did last time. The orange chip under Weight (Seconds for plank) is the <b>suggested next weight</b>: +2.5 kg on machines/cables or +2 kg per dumbbell when you hit the top of the range, the same weight when you're in range (or 1–2 reps short), and one step lighter if you fell further short. Tap it to fill the field, or type your own.</li>
+      <li id="sughelp">The grey hint shows what you did last time. The orange chip under Weight (Seconds for plank) is the <b>suggested next weight</b>: +2.5 kg on machines/cables or +2 kg per dumbbell when you hit the top of the range, the same weight when you're in range (or 1–2 reps short), and one step lighter if you fell further short. Tap it to fill the field, or type your own.</li>
       <li>Log reps <b>per set</b> in the small boxes (one per set; change Sets to add or remove boxes). The chip next to them suggests reps for each set: the top of the range for every set after you hit it on all sets (at the new weight), the same reps as last time when in range, one fewer per set if you were 3+ short, or the middle of the range the first time. The lowest set counts as the session's reps for progress and hints.</li>
       <li><b>Weekly pattern:</b> Mon/Wed/Fri lifting (A/B/C), Tue <b>Peloton HIIT</b> (P), Thu <b>yoga</b> (Y), Sat <b>core</b> (K), Sunday rest. Those cards show the session plan and simple log fields (duration, output, effort…); they save and sync like everything else and get their own summary under Progress.</li>
     </ul></div>
@@ -303,10 +303,10 @@ var SESS=[{date:"2026-10-10",day:"A",week:0,ex:EX.A}];(function(){var d=new Date
 // ---- special days (edit here) ----
 var MOUNJARO_FROM="2026-10-14",MOUNJARO_TO="2026-12-30"; // weekly shot: every Wednesday in this range (inclusive)
 var MOUNJARO_DATES=(function(){var out=[],d=new Date(MOUNJARO_FROM+"T12:00:00Z"),end=new Date(MOUNJARO_TO+"T12:00:00Z");while(d.getUTCDay()!==3)d.setUTCDate(d.getUTCDate()+1);for(;d<=end;d.setUTCDate(d.getUTCDate()+7))out.push(d.toISOString().slice(0,10));return out;})();
-var SPECIAL={"2026-10-10":{cls:"first",icon:"🌱",sets:2,text:"First day back – easy, after DEXA. ~45–60 min: 2 sets each, light weights, stop well short of failure."}};
+var SPECIAL={"2026-10-10":{cls:"first",icon:"🌱",sets:2,safeSug:true,text:"First day back – easy, after DEXA. ~45–60 min: 2 sets each, light weights, stop well short of failure."}};
 MOUNJARO_DATES.forEach(function(d){SPECIAL[d]={cls:"jab",icon:"💉",text:"Mounjaro day: take your shot this evening, after the workout."};});
 SESS.forEach(function(s){var sp=SPECIAL[s.date];if(!sp)return;s.special=sp;if(sp.sets&&!s.kind)s.ex=s.ex.map(function(x){return [x[0],x[1],Math.min(x[2],sp.sets)];});});
-function specialHTML(s){var sp=s.special;return sp?'<div class="flag '+sp.cls+'">'+sp.icon+' '+esc(sp.text)+'</div>':'';}
+function specialHTML(s){var sp=s.special;return sp?'<div class="flag '+sp.cls+'">'+sp.icon+' '+esc(sp.text+(sp.safeSug&&SUGGEST_MODE==="aggressive"?" Suggested weights use the gentler starts today (safety exception); the bolder suggestions start from your next session.":""))+'</div>':'';}
 var state={entries:{}};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.entries)state=p;}}catch(e){}
 stripNotes(state.entries);
@@ -349,7 +349,7 @@ var SUG_START={"Leg press":20,"Chest press machine":15,"Seated cable row":20,"Du
 function sugRange(t){var m=String(t).match(/(\d+)\s*-\s*(\d+)/);if(m)return [+m[1],+m[2]];m=String(t).match(/(\d+)/);return m?[+m[1],+m[1]]:[8,12];}
 function sugTarget(ex){for(var i=0;i<ORDER.length;i++)if(ORDER[i].name===ex)return ORDER[i].target;return "8-12";}
 function r2(x){return Math.round(x*100)/100;}
-function suggestCalc(ex,target,lw,lr){
+function suggestCalcCons(ex,target,lw,lr){
  var rg=sugRange(target),db=!!SUG_DB[ex],inc=db?2:2.5,min=db?2:5;
  if(ex==="Plank"){if(lr==null)return {v:SUG_START.Plank,why:"start",f:"r"};return lr>=rg[1]?{v:lr+5,why:"+5 s: held "+lr+" s",f:"r"}:{v:lr,why:"repeat",f:"r"};}
  if(lw==null||lr==null){var st=SUG_START[ex];return st==null?{v:null,why:"start: bodyweight",f:"w"}:{v:st,why:"start",f:"w"};}
@@ -358,7 +358,7 @@ function suggestCalc(ex,target,lw,lr){
  return {v:lw<=min?lw:r2(Math.max(min,lw-inc)),why:"ease off",f:"w"};
 }
 function lastWR(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),w=num(e.w),r=num(e.r);if(r!==null&&(ex==="Plank"||w!==null))best={w:w,r:r};}});return best;}
-function updateSug(row){updateRepSug(row);var b=row.querySelector(".sug");if(!b)return;var ex=row.dataset.ex,L=lastWR(ex,row.dataset.date),S=suggestCalc(ex,sugTarget(ex),L?L.w:null,L?L.r:null);
+function updateSug(row){updateRepSug(row);var b=row.querySelector(".sug");if(!b)return;var ex=row.dataset.ex,L=lastWR(ex,row.dataset.date),S=suggestCalc(ex,sugTarget(ex),L?L.w:null,L?L.r:null,row.dataset.date);
  var inp=row.querySelector('input[data-f="'+S.f+'"]'),unit=S.f==="r"?" s":" kg";
  b.dataset.f=S.f;b.dataset.v=S.v==null?"":String(S.v);
  var match=S.v!=null&&inp&&num(inp.value)===S.v;
@@ -372,7 +372,7 @@ window.__gymSuggest=suggestCalc;
 var WU_FIRST={A:"leg press",B:"goblet squat",C:"hack squat"};
 var CD_EXTRA={A:["Quad stretch","Lat stretch / child's pose"],B:["Quad stretch","Overhead triceps + cross-body shoulder stretch"],C:["Glute stretch (figure-4)","Biceps wall stretch"]};
 function wcList(items){return '<ul>'+items.map(function(t){return '<li><label><input type="checkbox"><span>'+esc(t)+'</span></label></li>';}).join("")+'</ul>';}
-function warmupHTML(day,open){return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary><p class="walk">🚶 Walk to the gym from home: a brisk walk is a good start to your warm-up.</p>'+wcList(["5 min easy bike or rower","10 bodyweight squats","10 hip hinges","10 band pull-aparts (or arm swings)","10 arm circles each way","1 light warm-up set of "+(WU_FIRST[day]||"the first exercise")])+'<a class="wguide" href="https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/" target="_blank" rel="noopener">Full warm-up guide (NHS) ↗</a></details>';}
+function warmupHTML(day,open,sx){return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary><p class="walk">🚶 Walk to the gym from home: a brisk walk is a good start to your warm-up.</p>'+wcList(["5 min easy bike or rower","10 bodyweight squats","10 hip hinges","10 band pull-aparts (or arm swings)","10 arm circles each way","1 light warm-up set of "+(WU_FIRST[day]||"the first exercise")+(sx?wuLight(sx.date,sx.ex[0][0],sx.ex[0][1]):"")])+'<a class="wguide" href="https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/" target="_blank" rel="noopener">Full warm-up guide (NHS) ↗</a></details>';}
 function cooldownHTML(day,open){return '<details class="wc cd"'+(open?' open':'')+'><summary>Cool-down stretches (~5 min, 30 s each)<span class="wn">ticks not saved</span></summary>'+wcList(["Hamstring stretch","Hip flexor stretch (kneeling lunge)","Chest doorway stretch","Calf stretch"].concat(CD_EXTRA[day]||[]))+'</details>';}
 
 
@@ -386,14 +386,14 @@ function repsTxt(e,ex){var a=rbArr(e,setsOf(e,ex)).filter(function(v){return v!=
 function boxHTML(i,v){return '<input class="rbx'+(v!==null&&v!==undefined&&v!==""?' filled':'')+'" inputmode="numeric" pattern="[0-9]*" placeholder="S'+(i+1)+'" aria-label="Set '+(i+1)+'" value="'+esc(v==null?"":v)+'">';}
 function boxesHTML(e,ex,n){var a=rbArr(e,n),h="";for(var i=0;i<n;i++)h+=boxHTML(i,a[i]);return h;}
 function lastReps(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),a=rbArr(e,setsOf(e,ex,s.date)),m=minR(a);if(m!==null)best={a:a,m:m};}});return best;}
-function suggestReps(ex,target,L,n){var rg=sugRange(target),out=[],i;
- if(ex==="Plank"){var S=suggestCalc(ex,target,null,L?L.m:null);for(i=0;i<n;i++)out.push(S.v);return {vals:out,why:S.why};}
+function suggestRepsCons(ex,target,L,n){var rg=sugRange(target),out=[],i;
+ if(ex==="Plank"){var S=suggestCalcCons(ex,target,null,L?L.m:null);for(i=0;i<n;i++)out.push(S.v);return {vals:out,why:S.why};}
  if(!L){var mid=Math.round((rg[0]+rg[1])/2);for(i=0;i<n;i++)out.push(mid);return {vals:out,why:"start: mid-range"};}
  if(L.m>=rg[1]){for(i=0;i<n;i++)out.push(rg[1]);return {vals:out,why:"all sets hit "+rg[1]+": aim for "+rg[1]+" at the new weight"};}
  var drop=L.m<rg[0]&&rg[0]-L.m>=3;
  for(i=0;i<n;i++){var v=L.a.length?L.a[Math.min(i,L.a.length-1)]:null;if(v===null||v===undefined)v=L.m;out.push(drop?Math.max(1,v-1):v);}
  return {vals:out,why:drop?"one fewer per set":L.m<rg[0]?"same reps, build up":"same reps as last time"};}
-function updateRepSug(row){var b=row.querySelector(".rsug");if(!b)return;var ex=row.dataset.ex,bx=row.querySelectorAll(".rbx"),n=bx.length,S=suggestReps(ex,sugTarget(ex),lastReps(ex,row.dataset.date),n);
+function updateRepSug(row){var b=row.querySelector(".rsug");if(!b)return;var ex=row.dataset.ex,bx=row.querySelectorAll(".rbx"),n=bx.length,S=suggestReps(ex,sugTarget(ex),lastReps(ex,row.dataset.date),n,row.dataset.date);
  var unit=ex==="Plank"?" s":" reps",same=S.vals.every(function(v){return v===S.vals[0];}),lab=same?S.vals[0]+unit:S.vals.join("/");
  var match=n>0&&Array.prototype.every.call(bx,function(x,i){return num(x.value)===S.vals[i];});
  b.dataset.vals=S.vals.join("/");b.innerHTML=(match?"✓ ":"→ ")+lab+"<small>"+esc(S.why)+"</small>";b.classList.toggle("match",match);b.hidden=false;b.setAttribute("aria-label","Use suggested "+lab+" ("+S.why+")");}
@@ -432,7 +432,7 @@ function cardioSummary(){var h='<div class="dtitle">Cardio, yoga &amp; core</div
 
 var todayStep=null,todayOpen=true,todayIO=null,thumbIO=null;
 var TWU=[["5 min easy bike or rower","stationary-bike","/api-next/videos/male-Cardio-stationary-bike-side.mp4","Easy bike"],["10 bodyweight squats","bodyweight-squat","/api-next/videos/male-Bodyweight-bodyweight-squat-side.mp4","Bodyweight squat"],["10 hip hinges","good-mornings","/api-next/videos/male-Bodyweight-good-mornings-side.mp4","Hip hinge"],["10 band pull-aparts (or arm swings)","band-pull-apart","/api-next/videos/male-Band-band-pull-apart-front.mp4","Band pull-apart"],["10 arm circles each way","forward-arm-circle","/api-next/videos/male-Bodyweight-forward-arm-circle-front.mp4","Arm circles"]];
-function todayWarmupHTML(s,open){var first=s.ex[0][0],g=GUIDE[first],items=TWU.slice();items.push(["1 light warm-up set of "+(WU_FIRST[s.day]||first),g&&g.mw?g.mw.slug:null,g&&g.mw?g.mw.v:null,first]);
+function todayWarmupHTML(s,open){var first=s.ex[0][0],g=GUIDE[first],items=TWU.slice();items.push(["1 light warm-up set of "+(WU_FIRST[s.day]||first)+wuLight(s.date,first,s.ex[0][1]),g&&g.mw?g.mw.slug:null,g&&g.mw?g.mw.v:null,first]);
  return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary><p class="walk">🚶 Walk to the gym from home: a brisk walk is a good start to your warm-up.</p><ul class="twl">'+items.map(function(it){var mu=it[1]?"https://musclewiki.com/exercise/"+it[1]:null;
   return '<li><label><input type="checkbox"><span>'+esc(it[0])+'</span></label>'+(it[2]?'<div class="tth"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the animation page for '+esc(it[0])+' in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+it[2]+'" aria-hidden="true"></video><span class="vlab">'+esc(it[3]||it[0])+'</span><span class="tap">Tap to view animation</span></a></div>':'<div class="tth none">🏋️</div>')+'</li>';}).join("")+'</ul><a class="wguide" href="https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/" target="_blank" rel="noopener">Full warm-up guide (NHS) ↗</a></details>';}
 function watchThumbs(root){var vs=root.querySelectorAll(".tth video");
@@ -446,9 +446,9 @@ function todayInfo(){var t=iso(new Date()),i=-1,j;for(j=0;j<SESS.length;j++)if(S
  var dow=new Date().getDay(),note=dow===0?"Sunday – rest day":"No session today";
  if(j>=SESS.length)return {i:-1,lab:"Programme finished",note:""};
  return {i:j,lab:"Next session",note:note};}
-function exDone(s,x){var e=get(s.date,x[0]);if(num(e.r)===null)return false;if(x[0]==="Plank")return true;var L=lastWR(x[0],s.date),W=suggestCalc(x[0],x[1],L?L.w:null,L?L.r:null);return W.v==null||num(e.w)!==null;}
+function exDone(s,x){var e=get(s.date,x[0]);if(num(e.r)===null)return false;if(x[0]==="Plank")return true;var L=lastWR(x[0],s.date),W=suggestCalc(x[0],x[1],L?L.w:null,L?L.r:null,s.date);return W.v==null||num(e.w)!==null;}
 function rowFor(date,ex){return document.querySelector('#sessions .row[data-date="'+date+'"][data-ex="'+String(ex).replace(/"/g,'\\"')+'"]');}
-function todayPreview(s,x){var ex=x[0],g=GUIDE[ex]||{},e=get(s.date,ex),L=lastWR(ex,s.date),W=suggestCalc(ex,x[1],L?L.w:null,L?L.r:null),w=num(e.w)!==null?num(e.w):(W?W.v:null),det=setsOf(e,ex,s.date)+' × '+x[1].replace(/ \(.*\)/,"");
+function todayPreview(s,x){var ex=x[0],g=GUIDE[ex]||{},e=get(s.date,ex),L=lastWR(ex,s.date),W=suggestCalc(ex,x[1],L?L.w:null,L?L.r:null,s.date),w=num(e.w)!==null?num(e.w):(W?W.v:null),det=setsOf(e,ex,s.date)+' × '+x[1].replace(/ \(.*\)/,"");
  if(w!=null&&ex!=="Plank")det+=' · '+w+' kg';
  return '<div class="tpv">'+(g.mw?'<div class="tth tpth"><a class="mwl" href="https://musclewiki.com/exercise/'+g.mw.slug+'" target="_blank" rel="noopener" aria-label="Open the '+esc(ex)+' animation page in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+g.mw.v+'" aria-hidden="true"></video><span class="tap">Tap to view animation</span></a></div>':'')+'<span class="tpvt tpvgo" role="button" tabindex="0"><small>Up next:</small><b>'+esc(ex)+'</b><small>'+esc(det)+'</small></span></div>';}
 function tli(t){return '<li>'+esc(t)+'</li>';}
@@ -514,6 +514,38 @@ function todayClick(ev){var el=document.getElementById("today"),t=ev.target;
 var todayRaf=0;function todaySoon(){if(todayRaf)return;todayRaf=requestAnimationFrame(function(){todayRaf=0;renderToday();});}
 
 function stripNotes(es){es=es||{};Object.keys(es).forEach(function(k){var e=es[k];if(!e||typeof e!=="object")return;delete e.n;delete e.notes;if(!Object.keys(e).length)delete es[k];});return es;}
+
+var SUGGEST_MODE="aggressive"; /* "aggressive" or "conservative" (the original rules) */
+var SUG_SMALL={"Cable bicep curl":1,"Tricep pushdown":1,"Cable crunch":1,"Lying leg curl":1};
+var SUG_CAP={"Leg press":40,"Chest press machine":25,"Seated cable row":30,"Lat pulldown":30,"Seated shoulder press machine":15,"Lying leg curl":15,"Cable crunch":20,"Hack squat (or leg press)":20,"Cable bicep curl":10,"Tricep pushdown":15,"Dumbbell Romanian deadlift":12,"Goblet squat":12,"Incline dumbbell press":10,"Chest-supported row":12,"Plank":30};
+function sugStep(ex){return SUG_DB[ex]?2:2.5;}
+function sugInc(ex){return SUG_DB[ex]?2:(SUG_SMALL[ex]?2.5:5);}
+function sugRound(x,st){return r2(Math.round(x/st)*st);}
+function sugSafe(date){return !!(date&&SPECIAL[date]&&SPECIAL[date].safeSug);}
+function sugMid(rg){return Math.ceil((rg[0]+rg[1])/2);}
+function sugLow(rg){return rg[1]>rg[0]?rg[0]+"–"+(rg[0]+1):String(rg[0]);}
+function suggestCalcAggr(ex,target,lw,lr,date){var rg=sugRange(target),mid=sugMid(rg),inc=sugInc(ex);
+ if(ex==="Plank"){if(lr==null){var p0=SUG_START.Plank;return sugSafe(date)?{v:p0,why:"gentle start (first day)",f:"r"}:{v:Math.min(SUG_CAP.Plank,sugRound(p0*1.25,5)),why:"start",f:"r"};}
+  return lr>=mid?{v:lr+10,why:"+10 s: held "+lr+" s",f:"r"}:{v:lr,why:"repeat",f:"r"};}
+ if(lw==null||lr==null){var st=SUG_START[ex];if(st==null)return {v:null,why:"start: bodyweight",f:"w"};
+  if(sugSafe(date))return {v:st,why:"gentle start (first day)",f:"w"};
+  return {v:Math.min(SUG_CAP[ex]||1e9,sugRound(st*1.25,sugStep(ex))),why:"start",f:"w"};}
+ if(lr>=mid)return {v:r2(lw+inc),why:"+"+inc+": every set reached "+mid,f:"w"};
+ if(lr<rg[0]&&rg[0]-lr>=3){var mn=sugStep(ex);return {v:lw<=mn?lw:r2(Math.max(mn,lw-inc)),why:"−"+inc+": missed by "+(rg[0]-lr),f:"w"};}
+ return {v:lw,why:lr<rg[0]?"same weight, build reps":"repeat",f:"w"};}
+function suggestRepsAggr(ex,target,L,n,date){var rg=sugRange(target),mid=sugMid(rg),lo=rg[0],out=[],i;function fill(v){for(i=0;i<n;i++)out.push(v);}
+ if(ex==="Plank"){var S=suggestCalcAggr(ex,target,null,L?L.m:null,date);fill(S.v);return {vals:out,why:S.why};}
+ if(!L){if(sugSafe(date)){fill(Math.round((rg[0]+rg[1])/2));return {vals:out,why:"start: mid-range"};}fill(lo);return {vals:out,why:"start: aim for "+sugLow(rg)};}
+ if(L.m>=mid){fill(lo);return {vals:out,why:"heavier: aim for "+sugLow(rg)};}
+ if(L.m<lo&&lo-L.m>=3){fill(lo);return {vals:out,why:"lighter: aim for "+lo};}
+ for(i=0;i<n;i++){var v=L.a.length?L.a[Math.min(i,L.a.length-1)]:null;if(v===null||v===undefined)v=L.m;out.push(v);}
+ return {vals:out,why:L.m<lo?"same weight: build reps":"same reps as last time"};}
+function suggestCalc(ex,target,lw,lr,date){return SUGGEST_MODE==="aggressive"?suggestCalcAggr(ex,target,lw,lr,date):suggestCalcCons(ex,target,lw,lr);}
+function suggestReps(ex,target,L,n,date){return SUGGEST_MODE==="aggressive"?suggestRepsAggr(ex,target,L,n,date):suggestRepsCons(ex,target,L,n);}
+function wuLight(date,ex,target){if(SUGGEST_MODE!=="aggressive"||!ex)return "";var w=num(get(date,ex).w);
+ if(w===null){var L=lastWR(ex,date),S=suggestCalc(ex,target,L?L.w:null,L?L.r:null,date);w=S.f==="w"?S.v:null;}
+ if(w==null)return "";var st=sugStep(ex);return " (~"+Math.max(st,sugRound(w*0.5,st))+" kg)";}
+(function(){var h=document.getElementById("sughelp");if(h&&SUGGEST_MODE==="aggressive")h.innerHTML='The grey hint shows what you did last time. The orange chips are the <b>suggestions</b> (aggressive but safe): a new exercise starts about 25% heavier than a cautious beginner start (capped). Once <b>every set reaches the middle</b> of the rep range, add weight: +5 kg on machines, +2.5 kg on small cable/isolation moves (curls, pushdowns, cable crunch, leg curl), +2 kg per dumbbell, +10 s on the plank. Then aim for the bottom of the range at the new weight. Below the range you keep the weight, unless you missed by 3+ reps, then it drops one step. The light warm-up set is about half your working weight. The first day back (10 Oct) uses the gentler starts. Tap a chip to fill the field, or type your own.';})();
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function hintHTML(ex,target,date){
@@ -533,7 +565,7 @@ function renderSessions(){
   if(s.kind){h+=cardioCard(s,i,isN,done,col);return;}
   h+='<div class="card'+(isN?' next':'')+(done?' done':'')+(col?' collapsed':'')+'" id="s'+i+'" data-i="'+i+'">';
   h+='<div class="chead"><div class="letter">'+s.day+'</div><div class="t"><div class="d">'+nice(s.date)+'</div><div class="s">Day '+s.day+' · '+s.ex.length+' exercises</div></div>';
-  h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div>'+specialHTML(s)+'<div class="rows">'+warmupHTML(s.day,isN);
+  h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div>'+specialHTML(s)+'<div class="rows">'+warmupHTML(s.day,isN,s);
   s.ex.forEach(function(x){
    var e=get(s.date,x[0]),sv=(e.s!==undefined&&e.s!=="")?e.s:x[2];var plank=/seconds/.test(x[1]),lunge=/per leg/.test(x[1]);
    h+='<div class="row" data-ex="'+esc(x[0])+'" data-date="'+s.date+'"><div class="rtop"><span class="ex">'+esc(x[0])+'</span><span class="tg">Target '+esc(x[1].replace(/ \(.*\)/,""))+(plank?" (reps = seconds)":lunge?" (reps per leg)":"")+'</span>'+howBtn(x[0])+'</div>';
