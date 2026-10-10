@@ -149,13 +149,18 @@ input.filled{border-color:#99d6cc;background:#f0fdfa}
 .tcard .tplan{font-size:13px;margin-top:6px;line-height:1.4}
 .tcard .tdone{margin-top:8px;font-weight:800;color:var(--teal)}
 .tcard .go{align-self:center;font-size:26px;color:var(--teal);font-weight:800;line-height:1}
+
+.flag{padding:8px 14px;font-size:13px;font-weight:700;line-height:1.35;border-bottom:1px solid var(--line)}
+.flag.jab{background:#fef3c7;color:#92400e}
+.flag.first{background:#e0f2fe;color:#075985}
+.tcard .flag{border:0;border-radius:9px;margin:6px 0 2px;padding:6px 9px;font-size:12.5px}
 </style>
 </head>
 <body>
 <header>
   <span class="saved" id="saved">Saved</span>
   <h1>Gym Coach Tracker</h1>
-  <div class="sub">M/W/F lift · Tue Peloton · Thu yoga · Sat core · 12 Oct – 2 Jan</div>
+  <div class="sub">M/W/F lift · Tue Peloton · Thu yoga · Sat core · 10 Oct – 2 Jan</div>
   <nav><button data-v="sessions" class="on">Sessions</button><button data-v="progress">Progress</button><button data-v="help">How to use</button></nav>
 </header>
 <main>
@@ -232,14 +237,21 @@ function ddmmyyyy(s){var p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
 var DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function nice(s){var d=new Date(s+"T12:00:00");return DOW[d.getDay()]+" "+d.getDate()+" "+MON[d.getMonth()]+" "+d.getFullYear();}
 // Build 36 sessions
-var SESS=[];(function(){var d=new Date(2026,9,12,12),end=new Date(2026,9,12+84,12),k=0;
- while(d<end){var w=d.getDay();if(w===1||w===3||w===5){var day="ABC"[k%3];SESS.push({date:iso(d),day:day,week:Math.floor(k/3)+1,ex:EX[day]});k++;}d.setDate(d.getDate()+1);}})();
+var SESS=[{date:"2026-10-10",day:"A",week:0,ex:EX.A}];(function(){var d=new Date(2026,9,12,12),end=new Date(2026,9,12+84,12),k=1,t0=new Date(2026,9,12,12);
+ while(d<end){var w=d.getDay();if(w===1||w===3||w===5){var day="ABC"[k%3];SESS.push({date:iso(d),day:day,week:Math.floor(Math.round((d-t0)/864e5)/7)+1,ex:EX[day]});k++;}d.setDate(d.getDate()+1);}})();
 
 (function(){var d=new Date(2026,9,13,12),end=new Date(2027,0,2,12),t0=new Date(2026,9,12,12);
  while(d<=end){var w=d.getDay(),ty=w===2?"P":w===4?"Y":w===6?"K":null;
   if(ty)SESS.push({date:iso(d),day:ty,kind:ty,week:Math.floor(Math.round((d-t0)/864e5)/7)+1,ex:[[CARDIO[ty].ex,CARDIO[ty].sub,null]]});
   d.setDate(d.getDate()+1);}
  SESS.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});})();
+
+// ---- special days (edit here) ----
+var MOUNJARO_DATES=["2026-10-14"]; // add further injection dates as "YYYY-MM-DD"
+var SPECIAL={"2026-10-10":{cls:"first",icon:"🌱",sets:2,text:"First day back – easy, after DEXA. ~45–60 min: 2 sets each, light weights, stop well short of failure."}};
+MOUNJARO_DATES.forEach(function(d){SPECIAL[d]={cls:"jab",icon:"💉",sets:2,text:"Mounjaro injection today – keep it light: ~2 sets each, stop 3+ reps short of failure, eat protein and drink water; skip if nauseous."};});
+SESS.forEach(function(s){var sp=SPECIAL[s.date];if(!sp)return;s.special=sp;if(sp.sets&&!s.kind)s.ex=s.ex.map(function(x){return [x[0],x[1],Math.min(x[2],sp.sets)];});});
+function specialHTML(s){var sp=s.special;return sp?'<div class="flag '+sp.cls+'">'+sp.icon+' '+esc(sp.text)+'</div>':'';}
 var state={entries:{}};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.entries)state=p;}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));flashSaved();}catch(e){toast("Could not save (storage blocked)");}}
@@ -250,7 +262,7 @@ function k(date,ex){return date+"|"+ex;}
 function num(v){if(v===undefined||v===null||v==="")return null;var n=parseFloat(String(v).replace(",","."));return isNaN(n)?null:n;}
 function get(date,ex){return state.entries[k(date,ex)]||{};}
 function topOf(t){var m=t.match(/(\d+)\s*-\s*(\d+)/);if(m)return +m[2];m=t.match(/(\d+)/);return m?+m[1]:null;}
-function defSets(ex){for(var i=0;i<ORDER.length;i++)if(ORDER[i].name===ex)return ORDER[i].sets;return 3;}
+function defSets(ex,date){if(date){for(var q=0;q<SESS.length;q++)if(SESS[q].date===date){var xx=SESS[q].ex;for(var z=0;z<xx.length;z++)if(xx[z][0]===ex&&xx[z][2]!=null)return xx[z][2];}}for(var i=0;i<ORDER.length;i++)if(ORDER[i].name===ex)return ORDER[i].sets;return 3;}
 function logged(e){return num(e.w)!==null||num(e.r)!==null;}
 function sessionDone(s){if(s.kind)return s.ex.some(function(x){var e=get(s.date,x[0]);return Object.keys(e).some(function(f){return String(e[f]).trim()!=="";});});return s.ex.some(function(x){var e=get(s.date,x[0]);return logged(e)||(e.n&&e.n.trim())||(num(e.s)!==null&&num(e.s)!==x[2]);});}
 function lastBefore(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex);if(logged(e))best={date:s.date,e:e};}});return best;}
@@ -312,12 +324,12 @@ function minR(a){var m=null;a.forEach(function(v){if(v!==null&&v!==undefined&&(m
 function rbStr(a){return a.some(function(v){return v!==null&&v!==undefined;})?a.map(function(v){return v==null?"":v;}).join("/"):"";}
 function rbArr(e,n){if(e.rb!=null&&e.rb!==""){var a=Array.isArray(e.rb)?e.rb:String(e.rb).split("/");return a.map(function(x){return num(x);});}
  var r=num(e.r),out=[];if(r===null)return out;for(var i=0;i<(n||3);i++)out.push(r);return out;}
-function setsOf(e,ex){var n=num(e.s);n=n===null?defSets(ex):n;return Math.max(1,Math.min(10,Math.round(n)));}
+function setsOf(e,ex,date){var n=num(e.s);n=n===null?defSets(ex,date):n;return Math.max(1,Math.min(10,Math.round(n)));}
 function repsMin(e){if(e.rb!=null&&e.rb!==""){var m=minR(rbArr(e,1));if(m!==null)return m;}return num(e.r);}
 function repsTxt(e,ex){var a=rbArr(e,setsOf(e,ex)).filter(function(v){return v!==null;});if(!a.length)return String(num(e.r));return a.every(function(v){return v===a[0];})?String(a[0]):a.join("/");}
 function boxHTML(i,v){return '<input class="rbx'+(v!==null&&v!==undefined&&v!==""?' filled':'')+'" inputmode="numeric" pattern="[0-9]*" placeholder="S'+(i+1)+'" aria-label="Set '+(i+1)+'" value="'+esc(v==null?"":v)+'">';}
 function boxesHTML(e,ex,n){var a=rbArr(e,n),h="";for(var i=0;i<n;i++)h+=boxHTML(i,a[i]);return h;}
-function lastReps(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),a=rbArr(e,setsOf(e,ex)),m=minR(a);if(m!==null)best={a:a,m:m};}});return best;}
+function lastReps(ex,date){var best=null;SESS.forEach(function(s){if(s.date<date){var e=get(s.date,ex),a=rbArr(e,setsOf(e,ex,s.date)),m=minR(a);if(m!==null)best={a:a,m:m};}});return best;}
 function suggestReps(ex,target,L,n){var rg=sugRange(target),out=[],i;
  if(ex==="Plank"){var S=suggestCalc(ex,target,null,L?L.m:null);for(i=0;i<n;i++)out.push(S.v);return {vals:out,why:S.why};}
  if(!L){var mid=Math.round((rg[0]+rg[1])/2);for(i=0;i<n;i++)out.push(mid);return {vals:out,why:"start: mid-range"};}
@@ -331,7 +343,7 @@ function updateRepSug(row){var b=row.querySelector(".rsug");if(!b)return;var ex=
  b.dataset.vals=S.vals.join("/");b.innerHTML=(match?"✓ ":"→ ")+lab+"<small>"+esc(S.why)+"</small>";b.classList.toggle("match",match);b.hidden=false;b.setAttribute("aria-label","Use suggested "+lab+" ("+S.why+")");}
 function commitBoxes(row){var a=Array.prototype.map.call(row.querySelectorAll(".rbx"),function(x){x.classList.toggle("filled",x.value.trim()!=="");return num(x.value.trim());});
  saveRB(k(row.dataset.date,row.dataset.ex),a);var m=minR(a),h=row.querySelector('input[data-f="r"]');h.value=m===null?"":String(m);h.dispatchEvent(new Event("input",{bubbles:true}));}
-function syncBoxes(row,force){var ex=row.dataset.ex,e=get(row.dataset.date,ex),si=row.querySelector('input[data-f="s"]'),n=setsOf({s:si?si.value:e.s},ex),w=row.querySelector(".rbw");if(!w)return;
+function syncBoxes(row,force){var ex=row.dataset.ex,e=get(row.dataset.date,ex),si=row.querySelector('input[data-f="s"]'),n=setsOf({s:si?si.value:e.s},ex,row.dataset.date),w=row.querySelector(".rbw");if(!w)return;
  var cur=w.querySelectorAll(".rbx"),act=document.activeElement;
  if(cur.length!==n){var keep=Array.prototype.map.call(cur,function(x){return x.value;}),lost=keep.slice(n).some(function(v){return v.trim()!=="";});
   if(!force&&!lost&&!e.rb&&num(e.r)!==null){keep=rbArr(e,n).map(function(v){return v==null?"":v;});}
@@ -348,7 +360,7 @@ function cardioHint(ex,date){var L=null;SESS.forEach(function(s){if(s.date<date&
 function cardioCard(s,i,isN,done,col){var C=CARDIO[s.kind],x=s.ex[0],e=get(s.date,x[0]),h="";
  h+='<div class="card k'+s.kind+(isN?' next':'')+(done?' done':'')+(col?' collapsed':'')+'" id="s'+i+'" data-i="'+i+'">';
  h+='<div class="chead"><div class="letter">'+s.kind+'</div><div class="t"><div class="d">'+nice(s.date)+'</div><div class="s">'+esc(C.title)+' · '+esc(C.sub)+'</div></div>';
- h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div><div class="rows">';
+ h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div>'+specialHTML(s)+'<div class="rows">';
  h+='<div class="plan"><h4>'+esc(C.title)+'</h4><ol>'+C.steps.map(function(t){return '<li>'+esc(t)+'</li>';}).join("")+'</ol>'+(C.ease&&s.week<=2?'<div class="ease">'+esc(C.ease)+'</div>':'')+(C.tip?'<div class="tip">'+esc(C.tip)+'</div>':'')+'</div>';
  h+='<div class="row" data-ex="'+esc(x[0])+'" data-date="'+s.date+'"><div class="hint">'+cardioHint(x[0],s.date)+'</div><div class="inputs cin">';
  C.fields.forEach(function(f){h+='<div><label>'+esc(f[1])+'</label><input data-f="'+f[0]+'" inputmode="'+f[2]+'"'+(f[2]==="numeric"?' pattern="[0-9]*"':'')+' value="'+esc(e[f[0]]||"")+'"'+(e[f[0]]?' class="filled"':'')+'></div>';});
@@ -371,7 +383,7 @@ function todayInfo(){var t=iso(new Date()),i=-1,j;for(j=0;j<SESS.length;j++)if(S
 function renderToday(){var el=document.getElementById("today");if(!el)return;var T=todayInfo();
  if(T.i<0){el.innerHTML='<div class="tlab"><span>'+T.lab+'</span></div>';return;}
  var s=SESS[T.i],h='<div class="tlab"><span>'+esc(T.lab)+' · '+esc(nice(s.date))+'</span>'+(T.note?'<span class="rest">'+esc(T.note)+'</span>':'')+'</div>';
- h+='<button type="button" class="tcard'+(s.kind?' k'+s.kind:'')+'" data-jump="'+T.i+'"><div class="letter">'+s.day+'</div><div class="tb">';
+ h+='<button type="button" class="tcard'+(s.kind?' k'+s.kind:'')+'" data-jump="'+T.i+'"><div class="letter">'+s.day+'</div><div class="tb">'+specialHTML(s);
  if(s.kind){var C=CARDIO[s.kind],e=get(s.date,C.ex),done=sessionDone(s);
   h+='<div class="tt">'+esc(C.title)+'</div><div class="ts">'+esc(C.sub)+(C.ease&&s.week<=2?' · weeks 1–2: '+(s.kind==="K"?'2 rounds':'ease in, ~7/10'):'')+'</div>';
   h+='<div class="tplan">'+esc(C.steps.join(" · "))+'</div>';
@@ -379,12 +391,12 @@ function renderToday(){var el=document.getElementById("today");if(!el)return;var
  }else{var nx=null,n=0;s.ex.forEach(function(x){if(logged(get(s.date,x[0])))n++;else if(!nx)nx=x;});
   h+='<div class="tt">Day '+s.day+' · '+s.ex.length+' exercises</div><div class="ts">'+n+' of '+s.ex.length+' logged</div>';
   if(!nx)h+='<div class="tdone">✓ All exercises logged</div>';
-  else{var ex=nx[0],tg=nx[1],L=lastWR(ex,s.date),W=suggestCalc(ex,tg,L?L.w:null,L?L.r:null),e=get(s.date,ex),R=suggestReps(ex,tg,lastReps(ex,s.date),setsOf(e,ex));
+  else{var ex=nx[0],tg=nx[1],L=lastWR(ex,s.date),W=suggestCalc(ex,tg,L?L.w:null,L?L.r:null),e=get(s.date,ex),R=suggestReps(ex,tg,lastReps(ex,s.date),setsOf(e,ex,s.date));
    var plank=ex==="Plank",same=R.vals.every(function(v){return v===R.vals[0];}),rl=same?R.vals[0]+(plank?" s":" reps"):R.vals.join("/")+(plank?" s":"");
    h+='<div class="tn">Next up: <b>'+esc(ex)+'</b> <span class="mut" style="font-size:12px">· target '+esc(tg.replace(/ \(.*\)/,""))+'</span></div><div class="tsug">';
    if(!plank)h+='<span>'+(W.v==null?"bodyweight":W.v+" kg")+'</span>';
    var why=(plank?"":W.why+" · ")+R.why;if(W.why==="start"&&/^start/.test(R.why))why="first time: beginner start weight, mid-range reps";
-   h+='<span>'+esc(rl)+(plank?'':' × '+setsOf(e,ex))+'</span></div><div class="tw">'+esc(why)+'</div>';}
+   h+='<span>'+esc(rl)+(plank?'':' × '+setsOf(e,ex,s.date))+'</span></div><div class="tw">'+esc(why)+'</div>';}
  }
  h+='</div><div class="go" aria-hidden="true">›</div></button>';el.innerHTML=h;}
 function jumpTo(i){var s=SESS[i],card=document.getElementById("s"+i);if(!card)return;card.classList.remove("collapsed");var tgt=card;
@@ -403,22 +415,22 @@ function hintHTML(ex,target,date){
 }
 var NI=nextIdx(),expandAll=false;
 function renderSessions(){
- var h="",wk=0;
+ var h="",wk=-1;
  SESS.forEach(function(s,i){
-  if(s.week!==wk){wk=s.week;h+='<div class="week"><span>Week '+wk+(wk<=2?' · leave 2–3 reps in reserve':'')+'</span></div>';}
+  if(s.week!==wk){wk=s.week;h+='<div class="week"><span>'+(wk===0?'Start · first day back':'Week '+wk+(wk<=2?' · leave 2–3 reps in reserve':''))+'</span></div>';}
   var done=sessionDone(s),isN=i===NI;
   var col=!(isN||expandAll);
   if(s.kind){h+=cardioCard(s,i,isN,done,col);return;}
   h+='<div class="card'+(isN?' next':'')+(done?' done':'')+(col?' collapsed':'')+'" id="s'+i+'" data-i="'+i+'">';
   h+='<div class="chead"><div class="letter">'+s.day+'</div><div class="t"><div class="d">'+nice(s.date)+'</div><div class="s">Day '+s.day+' · '+s.ex.length+' exercises</div></div>';
-  h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div><div class="rows">'+warmupHTML(s.day,isN);
+  h+='<span class="badge '+(done?'done">✓ Done':isN?'nx">Next':'todo">To do')+'</span></div>'+specialHTML(s)+'<div class="rows">'+warmupHTML(s.day,isN);
   s.ex.forEach(function(x){
    var e=get(s.date,x[0]),sv=(e.s!==undefined&&e.s!=="")?e.s:x[2];var plank=/seconds/.test(x[1]),lunge=/per leg/.test(x[1]);
    h+='<div class="row" data-ex="'+esc(x[0])+'" data-date="'+s.date+'"><div class="rtop"><span class="ex">'+esc(x[0])+'</span><span class="tg">Target '+esc(x[1].replace(/ \(.*\)/,""))+(plank?" (reps = seconds)":lunge?" (reps per leg)":"")+'</span>'+howBtn(x[0])+'</div>';
    h+='<div class="hint">'+hintHTML(x[0],x[1],s.date)+'</div><div class="guide" hidden></div><div class="inputs ps">';
    h+='<div><label>Weight (kg)</label><input data-f="w" inputmode="decimal" placeholder="'+(plank?"BW":"kg")+'" value="'+esc(e.w||"")+'"'+(e.w?' class="filled"':'')+'>'+(plank?'':'<button class="sug" type="button" hidden></button>')+'</div>';
    h+='<div><label>Sets</label><input data-f="s" inputmode="numeric" pattern="[0-9]*" value="'+esc(sv)+'"></div>';
-   h+='<div class="repcell"><label>'+(plank?"Seconds per set":lunge?"Reps per set (per leg)":"Reps per set")+'</label><input type="hidden" data-f="r" value="'+esc(e.r||"")+'"><div class="rbw">'+boxesHTML(e,x[0],setsOf(e,x[0]))+'<button class="rsug" type="button" hidden></button></div></div></div>';
+   h+='<div class="repcell"><label>'+(plank?"Seconds per set":lunge?"Reps per set (per leg)":"Reps per set")+'</label><input type="hidden" data-f="r" value="'+esc(e.r||"")+'"><div class="rbw">'+boxesHTML(e,x[0],setsOf(e,x[0],s.date))+'<button class="rsug" type="button" hidden></button></div></div></div>';
    h+='<div class="notes"><input data-f="n" type="text" placeholder="Notes (optional)" value="'+esc(e.n||"")+'"></div></div>';
   });
   h+=cooldownHTML(s.day,isN)+'</div></div>';
@@ -438,7 +450,7 @@ document.getElementById("sessions").addEventListener("click",function(ev){var b=
 document.getElementById("sessions").addEventListener("input",function(ev){
  var inp=ev.target;if(!inp.dataset.f)return;var row=inp.closest(".row"),date=row.dataset.date,ex=row.dataset.ex,key=k(date,ex);
  var e=state.entries[key]||{};var v=inp.value.trim();
- if(inp.dataset.f==="s"&&num(v)===defSets(ex))v="";
+ if(inp.dataset.f==="s"&&num(v)===defSets(ex,date))v="";
  if(v==="")delete e[inp.dataset.f];else e[inp.dataset.f]=v;
  if(Object.keys(e).length)state.entries[key]=e;else delete state.entries[key];
  inp.classList.toggle("filled",inp.dataset.f!=="n"&&inp.dataset.f!=="s"&&v!=="");
@@ -494,7 +506,7 @@ document.getElementById("toggleAll").addEventListener("click",function(){expandA
 function download(name,text,type){var b=new Blob([text],{type:type});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
 function csvCell(v){v=v===undefined||v===null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 function buildCSV(){var L=["Date,Day,Exercise,Target,Weight (kg),Reps,Reps by set,Sets,Notes,Duration (min),Output (kJ),Avg HR,Effort (1-10),Rounds"];
- SESS.forEach(function(s){s.ex.forEach(function(x){var e=get(s.date,x[0]);L.push([ddmmyyyy(s.date),s.day,x[0],x[1],e.w||"",e.r||"",rbStr(rbArr(e,setsOf(e,x[0]))),(e.s!==undefined&&e.s!=="")?e.s:(x[2]==null?"":x[2]),e.n||"",e.d||"",e.o||"",e.hr||"",e.ef||"",e.rd||""].map(csvCell).join(","));});});
+ SESS.forEach(function(s){s.ex.forEach(function(x){var e=get(s.date,x[0]);L.push([ddmmyyyy(s.date),s.day,x[0],x[1],e.w||"",e.r||"",rbStr(rbArr(e,setsOf(e,x[0],s.date))),(e.s!==undefined&&e.s!=="")?e.s:(x[2]==null?"":x[2]),e.n||"",e.d||"",e.o||"",e.hr||"",e.ef||"",e.rd||""].map(csvCell).join(","));});});
  return L.join("\r\n");}
 window.__gym={buildCSV:buildCSV,stats:stats,SESS:SESS};
 document.getElementById("expCsv").addEventListener("click",function(){download("gym-log-"+iso(new Date())+".csv","\ufeff"+buildCSV(),"text/csv");});
