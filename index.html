@@ -218,6 +218,14 @@ a.mwl{position:relative;display:block;text-decoration:none;color:inherit;-webkit
 .today .tgoal{margin:0 2px 8px;font-size:12.5px;font-weight:700;color:#7c2d12;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:6px 10px}
 .addon{margin-top:8px;font-size:13px;line-height:1.35;color:#1e3a8a;background:#eff6ff;border-left:4px solid #3b82f6;border-radius:6px;padding:7px 9px}
 .wnote{margin:-2px 2px 10px;font-size:12.5px;font-weight:700;color:#1e3a8a;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:7px 10px}
+
+.wc ul.cdl{list-style:none;margin:0;padding:0 14px 8px}
+.wc .cdl li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid #eef2f7}
+.wc .cdl li:last-child{border-bottom:0}
+.wc .cdl label{flex:1}
+.cdl .tth{width:104px;flex:none;text-align:center;font-size:10.5px;line-height:1.2}
+.cdl .tth video{width:104px;height:58px;display:block;border-radius:8px;background:#0f172a;object-fit:cover}
+.tcard .tcd{margin:0 -14px 10px}.tcard .tcd .wc{border-top:0}
 header{padding-top:calc(12px + env(safe-area-inset-top,0px))}
 .saved{top:calc(14px + env(safe-area-inset-top,0px))}
 .instbtn{margin-left:8px;vertical-align:3px;font:inherit;font-size:11px;font-weight:700;letter-spacing:0;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 9px;cursor:pointer}
@@ -396,7 +404,30 @@ var WU_FIRST={A:"leg press",B:"goblet squat",C:"hack squat"};
 var CD_EXTRA={A:["Quad stretch","Lat stretch / child's pose"],B:["Quad stretch","Overhead triceps + cross-body shoulder stretch"],C:["Glute stretch (figure-4)","Biceps wall stretch"]};
 function wcList(items){return '<ul>'+items.map(function(t){return '<li><label><input type="checkbox"><span>'+esc(t)+'</span></label></li>';}).join("")+'</ul>';}
 function warmupHTML(day,open,sx){return '<details class="wc wu"'+(open?' open':'')+'><summary>Warm-up (~10 min)<span class="wn">ticks not saved</span></summary><p class="walk">🚶 Walk to the gym from home: a brisk walk is a good start to your warm-up.</p>'+wcList(["5 min easy bike or rower","10 bodyweight squats","10 hip hinges","10 band pull-aparts (or arm swings)","10 arm circles each way","1 light warm-up set of "+(WU_FIRST[day]||"the first exercise")+(sx?wuLight(sx.date,sx.ex[0][0],sx.ex[0][1]):"")])+'<a class="wguide" href="https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/" target="_blank" rel="noopener">Full warm-up guide (NHS) ↗</a></details>';}
-function cooldownHTML(day,open){return '<details class="wc cd"'+(open?' open':'')+'><summary>Cool-down stretches (~5 min, 30 s each)<span class="wn">ticks not saved</span></summary>'+wcList(["Hamstring stretch","Hip flexor stretch (kneeling lunge)","Chest doorway stretch","Calf stretch"].concat(CD_EXTRA[day]||[]))+'</details>';}
+
+var CD_BASE=["Hamstring stretch","Hip flexor stretch (kneeling lunge)","Chest doorway stretch","Calf stretch"];
+var CD_MW={
+ "Hamstring stretch":["hamstring-stretch-static-standing-single-leg","/api-next/videos/male-Recovery-hamstring-stretch-static-standing-single-leg-side.mp4","Hamstring stretch"],
+ "Hip flexor stretch (kneeling lunge)":["hip-flexor-stretch-kneeling-lunge-1","/api-next/videos/male-Recovery-hip-flexor-stretch-kneeling-lunge-1-side.mp4","Hip flexor stretch"],
+ "Chest doorway stretch":["chest-stretch-variation-one","/api-next/videos/male-chest-stretch-variation-1-front.mp4","Doorway stretch"],
+ "Calf stretch":["gastrocnemius-stretch-unilateral-on-wall","/api-next/videos/male-Recovery-gastrocnemius-stretch-unilateral-on-wall-side.mp4","Calf stretch"],
+ "Quad stretch":["quads-stretch-variation-one","/api-next/videos/male-quads-stretch-variation-1-side.mp4","Quad stretch"],
+ "Lat stretch / child's pose":["prayer-stretch-1","/api-next/videos/male-Recovery-prayer-stretch-1-side.mp4","Child's pose"],
+ "Overhead triceps + cross-body shoulder stretch":["triceps-stretch-variation-two","/api-next/videos/male-triceps-stretch-variation-2-front.mp4","Overhead triceps stretch"],
+ "Glute stretch (figure-4)":["glute-hip-rotator-stretch-supine","/api-next/videos/male-Recovery-glute-hip-rotator-stretch-supine-side.mp4","Figure-4 glute stretch"],
+ "Biceps wall stretch":["biceps-stretch-variation-two","/api-next/videos/male-biceps-stretch-variation-2-side.mp4","Biceps wall stretch"]};
+var cdIO=null;
+function cdItems(day){return CD_BASE.concat(CD_EXTRA[day]||[]);}
+function cdThumb(t,m){return '<div class="tth"><a class="mwl" href="https://musclewiki.com/exercise/'+m[0]+'" target="_blank" rel="noopener" aria-label="Open the animation page for '+esc(t)+' in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+m[1]+'" aria-hidden="true"></video><span class="vlab">'+esc(m[2])+'</span><span class="tap">Tap to view animation</span></a></div>';}
+function cdLi(t){var m=CD_MW[t];return '<li><label><input type="checkbox"><span>'+esc(t)+'</span></label>'+(m?cdThumb(t,m):'')+'</li>';}
+function watchCd(root){if(!root)return;var vs=root.querySelectorAll(".cdl .tth video");
+ vs.forEach(function(v){if(v.dataset.cdw)return;v.dataset.cdw="1";v.muted=true;v.addEventListener("error",function(){var a=v.closest("a.mwl");if(a)a.classList.add("ph");});});
+ if(!("IntersectionObserver" in window)){vs.forEach(function(v){if(!v.getAttribute("src"))v.src=v.dataset.src;});return;}
+ if(!cdIO)cdIO=new IntersectionObserver(function(es){es.forEach(function(en){var v=en.target;if(en.isIntersecting){if(!v.getAttribute("src"))v.src=v.dataset.src;var p=v.play();if(p&&p.catch)p.catch(function(){});}else v.pause();});},{threshold:0.1});
+ vs.forEach(function(v){cdIO.observe(v);});}
+function cdPreview(s){var it=cdItems(s.day),m=CD_MW[it[0]];
+ return '<div class="tpv">'+(m?'<div class="tth tpth"><a class="mwl" href="https://musclewiki.com/exercise/'+m[0]+'" target="_blank" rel="noopener" aria-label="Open the '+esc(it[0])+' animation page in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+m[1]+'" aria-hidden="true"></video><span class="tap">Tap to view animation</span></a></div>':'')+'<span class="tpvt tpvgo" role="button" tabindex="0"><small>Up next:</small><b>Cool-down</b><small>'+it.length+' stretches · ~5 min</small></span></div>';}
+function cooldownHTML(day,open){return '<details class="wc cd"'+(open?' open':'')+'><summary>Cool-down stretches (~5 min, 30 s each)<span class="wn">ticks not saved</span></summary><ul class="cdl">'+cdItems(day).map(cdLi).join("")+'</ul></details>';}
 
 
 function minR(a){var m=null;a.forEach(function(v){if(v!==null&&v!==undefined&&(m===null||v<m))m=v;});return m;}
@@ -476,7 +507,7 @@ function todayPreview(s,x){var ex=x[0],g=GUIDE[ex]||{},e=get(s.date,ex),L=lastWR
  return '<div class="tpv">'+(g.mw?'<div class="tth tpth"><a class="mwl" href="https://musclewiki.com/exercise/'+g.mw.slug+'" target="_blank" rel="noopener" aria-label="Open the '+esc(ex)+' animation page in a new tab"><video muted loop playsinline preload="none" data-src="https://musclewiki.com'+g.mw.v+'" aria-hidden="true"></video><span class="tap">Tap to view animation</span></a></div>':'')+'<span class="tpvt tpvgo" role="button" tabindex="0"><small>Up next:</small><b>'+esc(ex)+'</b><small>'+esc(det)+'</small></span></div>';}
 function tli(t){return '<li>'+esc(t)+'</li>';}
 function renderToday(){var el=document.getElementById("today");if(!el)return;var T=todayInfo();
- var old=el.querySelector(".tvid video");if(old)old.remove();var oldWu=el.querySelector(".twu .wu");if(oldWu)oldWu.remove();
+ var old=el.querySelector(".tvid video");if(old)old.remove();var oldWu=el.querySelector(".twu .wu");if(oldWu)oldWu.remove();var oldCd=el.querySelector(".tcd .cd");if(oldCd)oldCd.remove();
  if(T.i<0){el.innerHTML='<div class="tlab"><span>'+T.lab+'</span></div>';return;}
  var s=SESS[T.i],h='<div class="tlab"><span>'+esc(T.lab)+' · '+esc(nice(s.date))+'</span>'+(T.note?'<span class="rest">'+esc(T.note)+'</span>':'')+'</div><div class="tgoal">🎯 '+esc(GOAL)+'</div>',body="",sub="";
  if(s.kind){var C=CARDIO[s.kind];sub='<div class="tt">'+esc(C.title)+'</div><div class="ts">'+esc(C.sub)+(sessionDone(s)?' · ✓ logged':'')+'</div>';
@@ -492,13 +523,13 @@ function renderToday(){var el=document.getElementById("today");if(!el)return;var
   var cx=st>=1&&st<=N?s.ex[st-1]:null;
   sub='<div class="tt">Day '+s.day+' · '+s.ex.length+' exercises</div><div class="ts">'+n+' of '+s.ex.length+' done</div>';
   body+='<div class="twu" data-date="'+s.date+'"'+(st===0?'':' hidden')+'><span class="wslot"></span></div>';
-  if(st>N)body+='<div class="tdone">✓ All exercises logged – nice work.</div>';
+  if(st===N+1)body+='<div class="tcd" data-date="'+s.date+'"><span class="cslot"></span></div>';if(st>N+1)body+='<div class="tdone">'+(n===N?'✓ All exercises logged – nice work.':'✓ Session finished · '+n+' of '+N+' exercises logged.')+'</div>';
   else if(cx){var ex=cx[0],g=GUIDE[ex]||{},e=get(s.date,ex),sets=setsOf(e,ex,s.date),cdone=exDone(s,cx);
    body+='<div class="tnx"><div class="tnl">'+(cdone?'Logged ✓':(nx&&nx[0]===ex?'Next up':'Coming up'))+'</div><div class="tnn">'+esc(ex)+'</div><div class="tnr">'+sets+' × '+esc(cx[1].replace(/ \(.*\)/,""))+'</div></div>';
    if(g.mw){var mu="https://musclewiki.com/exercise/"+g.mw.slug;body+='<div class="tvid" data-ex="'+esc(ex)+'"><a class="mwl" href="'+mu+'" target="_blank" rel="noopener" aria-label="Open the '+esc(ex)+' animation page in a new tab"><span class="vslot"></span><span class="vlab">'+esc(ex)+'</span><span class="tap">Tap to view animation</span></a></div>';}
    body+='<div class="tchips" data-date="'+s.date+'" data-ex="'+esc(ex)+'"></div><div class="tlog"></div>';
    if(g.cues)body+='<div class="tcm"><h5>Form cues</h5><ul class="good">'+g.cues.map(tli).join("")+'</ul><h5>Common mistakes</h5><ul class="bad">'+g.mistakes.map(tli).join("")+'</ul></div>';}
-  body+='<div class="tidx">'+(st===0?'Warm-up':st>N?'All done ✓':'Exercise '+st+' of '+N)+'</div><div class="tnav" data-step="'+st+'" data-n="'+N+'"><button type="button" class="tprev"'+(st===0?' disabled':'')+'>← Back</button>'+(st<N?todayPreview(s,s.ex[st]):'<div class="tpv tpvend"><span class="tpvt"><b>'+(st>N?'All done ✓':'Last exercise')+'</b></span></div>')+'<button type="button" class="tnext"'+(st>=N?' disabled':'')+'>'+(st>=N?'Done':'Next →')+'</button></div>';
+  body+='<div class="tidx">'+(st===0?'Warm-up':st===N+1?'Cool-down':st>N?'All done ✓':'Exercise '+st+' of '+N)+'</div><div class="tnav" data-step="'+st+'" data-n="'+N+'"><button type="button" class="tprev"'+(st===0?' disabled':'')+'>← Back</button>'+(st<N?todayPreview(s,s.ex[st]):st===N?cdPreview(s):'<div class="tpv tpvend"><span class="tpvt"><b>'+(st>N+1?'All done ✓':'Last step')+'</b></span></div>')+'<button type="button" class="tnext"'+(st>N+1?' disabled':'')+'>'+(st>N?'Done':'Next →')+'</button></div>';
   body+='<h5>Today’s exercises</h5><ul class="tlist">'+s.ex.map(function(x){var d=exDone(s,x),cur=cx&&x[0]===cx[0];return '<li class="'+(d?'d':'')+(cur?' cur':'')+'" data-jumpex="'+esc(x[0])+'"><span>'+(d?'✓ ':cur?'▶ ':'')+esc(x[0])+'</span><span class="mut">'+setsOf(get(s.date,x[0]),x[0],s.date)+' × '+esc(x[1].replace(/ \(.*\)/,""))+'</span></li>';}).join("")+'</ul>';
   body+='<button type="button" class="tgo" data-jump="'+T.i+'">Open full session ›</button>';}
  h+='<div class="tcard'+(s.kind?' k'+s.kind:'')+'" data-i="'+T.i+'"><div class="thead" data-jump="'+T.i+'"><div class="letter">'+s.day+'</div><div class="tb">'+sub+'</div><button type="button" class="ttog" aria-label="'+(todayOpen?'Collapse':'Expand')+' today card" aria-expanded="'+todayOpen+'">'+(todayOpen?'▴':'▾')+'</button></div>'+specialHTML(s)+'<div class="tbody"'+(todayOpen?'':' hidden')+'>'+body+'</div></div>';
@@ -506,6 +537,9 @@ function renderToday(){var el=document.getElementById("today");if(!el)return;var
  var tw=el.querySelector(".twu");if(tw){var wu=(oldWu&&oldWu.dataset.date===tw.dataset.date)?oldWu:null;
   if(!wu){var tmp=document.createElement("div");tmp.innerHTML=todayWarmupHTML(s,true);wu=tmp.firstChild;wu.dataset.date=tw.dataset.date;watchThumbs(wu);}
   tw.querySelector(".wslot").replaceWith(wu);}
+ var tcd=el.querySelector(".tcd");if(tcd){var cd=(oldCd&&oldCd.dataset.date===tcd.dataset.date)?oldCd:null;
+  if(!cd){var tmp2=document.createElement("div");tmp2.innerHTML=cooldownHTML(s.day,true);cd=tmp2.firstChild;cd.dataset.date=tcd.dataset.date;}
+  tcd.querySelector(".cslot").replaceWith(cd);watchCd(cd);}
  var pv=el.querySelector(".tpv .tth");if(pv)watchThumbs(pv.parentNode);
  var tv=el.querySelector(".tvid");
  if(tv){var exn=tv.dataset.ex,v;if(old&&old.dataset.ex===exn)v=old;else{v=document.createElement("video");v.muted=true;v.loop=true;v.playsInline=true;v.autoplay=true;v.setAttribute("muted","");v.setAttribute("playsinline","");v.preload="auto";v.dataset.ex=exn;v.setAttribute("aria-hidden","true");v.src="https://musclewiki.com"+GUIDE[exn].mw.v;
@@ -528,7 +562,7 @@ function jumpTo(i){var s=SESS[i],card=document.getElementById("s"+i);if(!card)re
 function todayClick(ev){var el=document.getElementById("today"),t=ev.target;
  var tc=t.closest(".tchip");if(tc){var c=el.querySelector(".tchips"),r=rowFor(c.dataset.date,c.dataset.ex),b=r&&r.querySelector(tc.dataset.src);if(b&&!b.disabled)b.click();return;}
  if(t.closest(".ttog")){todayOpen=!todayOpen;renderToday();return;}
- var nb=t.closest(".tprev,.tnext,.tpvgo");if(nb){if(nb.disabled)return;var nv=nb.closest(".tnav"),cs=SESS[+el.querySelector(".tcard").dataset.i],N=+nv.dataset.n,cur=+nv.dataset.step,ns=!nb.classList.contains("tprev")?Math.min(cur+1,N):(cur>N?N:Math.max(cur-1,0));
+ var nb=t.closest(".tprev,.tnext,.tpvgo");if(nb){if(nb.disabled)return;var nv=nb.closest(".tnav"),cs=SESS[+el.querySelector(".tcard").dataset.i],N=+nv.dataset.n,cur=+nv.dataset.step,ns=!nb.classList.contains("tprev")?Math.min(cur+1,N+2):Math.max(cur-1,0);
   todayStep={date:cs.date,step:ns,was:ns>=1&&ns<=N&&exDone(cs,cs.ex[ns-1])};renderToday();
   var c=el.querySelector(".tcard"),hh=(document.querySelector("header")||{offsetHeight:0}).offsetHeight,top=c.getBoundingClientRect().top;if(top<hh)window.scrollBy(0,top-hh-8);return;}
  if(t.closest("a"))return;
@@ -609,7 +643,7 @@ function renderSessions(){
   });
   h+=cooldownHTML(s.day,isN)+'</div></div>';
  });
- document.getElementById("sessions").innerHTML=h;
+ document.getElementById("sessions").innerHTML=h;watchCd(document.getElementById("sessions"));
  updateAllSug();
  renderToday();
 }
