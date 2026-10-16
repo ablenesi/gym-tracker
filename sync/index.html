@@ -909,16 +909,50 @@ else{
 })();
 </script>
 <script>
-(function(){var done=false;function run(){var el=document.getElementById("bodyCard"),t=localStorage.getItem("gct-token");if(!el||!t||done)return;done=true;
-fetch("https://api.github.com/repos/ablenesi/gym-tracker-data/contents/body.json",{headers:{"Authorization":"Bearer "+t,"Accept":"application/vnd.github.raw+json"},cache:"no-store"}).then(function(r){
- if(r.status===404){el.innerHTML='<div class="box"><h3>Body (Withings)</h3><p class="mut">Not connected yet. <a href="withings.html">Connect Withings</a></p></div>';return null;}
- return r.ok?r.json():null;}).then(function(b){if(!b||!b.measures)return;var m=b.measures.filter(function(x){return x.weight_kg;});if(!m.length)return;
- var L=m[m.length-1],W=320,H=110,ws=m.map(function(x){return x.weight_kg;}),mn=Math.min.apply(0,ws)-0.5,mx=Math.max.apply(0,ws)+0.5,t0=m[0].date,t1=Math.max(L.date,t0+1);
- var pts=m.map(function(x){return ((x.date-t0)/(t1-t0)*(W-10)+5).toFixed(1)+","+(H-5-(x.weight_kg-mn)/(mx-mn)*(H-10)).toFixed(1);}).join(" ");
- function f(v,u){return v==null?"–":v+u;}
- el.innerHTML='<div class="box"><h3>Body (Withings)</h3><p>'+new Date(L.date*1000).toLocaleDateString("en-GB")+': <b>'+f(L.weight_kg," kg")+'</b> · fat '+f(L.fat_pct,"%")+' · muscle '+f(L.muscle_pct,"%")+(L.hr_bpm?' · HR '+L.hr_bpm+' bpm':'')+'</p>'+
- (m.length>1?'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto"><polyline fill="none" stroke="currentColor" stroke-width="2" points="'+pts+'"/></svg><p class="mut" style="font-size:12px">Weight '+mn.toFixed(1)+'–'+mx.toFixed(1)+' kg, '+m.length+' weigh-ins</p>':'')+'</div>';
- }).catch(function(){});}
+(function(){var done=false,RAW="application/vnd.github.raw+json",API="https://api.github.com/repos/ablenesi/gym-tracker-data/contents/";
+function css(){if(document.getElementById("pgCss"))return;var s=document.createElement("style");s.id="pgCss";s.textContent=
+'.pg{border:1px solid var(--line,#e3e6ea);border-radius:14px;padding:14px;background:var(--card,#fff)}.pg h3{margin:0 0 2px}.pg .sub{font-size:12px;opacity:.65;margin:0 0 10px}'+
+'.pgt{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}@media(min-width:560px){.pgt{grid-template-columns:repeat(4,1fr)}}'+
+'.pgt div{background:rgba(127,127,127,.08);border-radius:10px;padding:8px 10px}.pgt b{display:block;font-size:20px;line-height:1.2}.pgt span{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.04em}'+
+'.pgbar{height:10px;border-radius:6px;background:rgba(127,127,127,.15);overflow:hidden;margin:4px 0 2px}.pgbar i{display:block;height:100%;background:linear-gradient(90deg,#f59e0b,#10b981)}'+
+'.pgc{margin-top:12px}.pgc h4{margin:0 0 4px;font-size:13px;display:flex;justify-content:space-between}.pgc h4 small{font-weight:400;opacity:.65}.pgc svg{width:100%;height:auto;display:block;font-family:inherit}'+
+'.pgl{font-size:11px;opacity:.7;margin-top:8px}';document.head.appendChild(s);}
+function lin(pts){var n=pts.length,sx=0,sy=0,sxx=0,sxy=0;pts.forEach(function(p){sx+=p[0];sy+=p[1];sxx+=p[0]*p[0];sxy+=p[0]*p[1];});var d=n*sxx-sx*sx;if(!d)return null;var a=(n*sxy-sx*sy)/d;return {a:a,b:(sy-a*sx)/n};}
+function chart(o){/* o:{pts:[[t,v]],goal,bands,min,max,unit,color,proj} */
+ var W=340,H=150,L=34,R=8,T=10,B=22,ts=o.pts.map(function(p){return p[0];}),vs=o.pts.map(function(p){return p[1];});
+ var t0=Math.min.apply(0,ts),t1=Math.max.apply(0,ts);if(o.proj)t1=Math.max(t1,o.proj.t1);if(t1-t0<7*864e5)t1=t0+7*864e5;
+ var all=vs.concat([o.goal]);if(o.proj)all.push(o.proj.v1);var lo=Math.min.apply(0,all),hi=Math.max.apply(0,all),pad=(hi-lo)*.12||1;lo=o.min!=null?Math.min(o.min,lo-pad):lo-pad;hi=o.max!=null?Math.max(o.max,hi+pad):hi+pad;
+ function X(t){return L+(t-t0)/(t1-t0)*(W-L-R);}function Y(v){return T+(hi-v)/(hi-lo)*(H-T-B);}
+ var s='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+ (o.bands||[]).forEach(function(b){var y1=Y(Math.min(b[1],hi)),y0=Y(Math.max(b[0],lo));if(y0>y1)s+='<rect x="'+L+'" y="'+y1+'" width="'+(W-L-R)+'" height="'+(y0-y1)+'" fill="'+b[2]+'" opacity=".16"/><text x="'+(W-R-3)+'" y="'+(y1+10)+'" font-size="8" text-anchor="end" fill="'+b[2]+'">'+b[3]+'</text>';});
+ for(var i=0;i<=4;i++){var v=lo+(hi-lo)*i/4,y=Y(v);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="currentColor" opacity=".08"/><text x="'+(L-4)+'" y="'+(y+3)+'" font-size="9" text-anchor="end" fill="currentColor" opacity=".55">'+v.toFixed(o.dp||0)+'</text>';}
+ var days=(t1-t0)/864e5,step=days>120?30:days>40?14:days>14?7:2;for(var d=0;d<=days;d+=step){var t=t0+d*864e5;s+='<text x="'+X(t)+'" y="'+(H-6)+'" font-size="9" text-anchor="middle" fill="currentColor" opacity=".55">'+new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+'</text>';}
+ var gy=Y(o.goal);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+gy+'" y2="'+gy+'" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5 4"/><text x="'+(L+4)+'" y="'+(gy-4)+'" font-size="9" fill="#10b981" font-weight="600">Goal '+o.goal+o.unit+'</text>';
+ if(o.proj)s+='<line x1="'+X(o.proj.t0)+'" y1="'+Y(o.proj.v0)+'" x2="'+X(o.proj.t1)+'" y2="'+Y(o.proj.v1)+'" stroke="'+o.color+'" stroke-width="1.5" stroke-dasharray="2 3" opacity=".7"/>';
+ if(o.pts.length>1)s+='<polyline fill="none" stroke="'+o.color+'" stroke-width="2.5" stroke-linejoin="round" points="'+o.pts.map(function(p){return X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1);}).join(" ")+'"/>';
+ o.pts.forEach(function(p,i){s+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="'+(p[2]?4:3)+'" fill="'+(p[2]?'#fff':o.color)+'" stroke="'+o.color+'" stroke-width="2"><title>'+new Date(p[0]).toLocaleDateString("en-GB")+': '+p[1]+o.unit+(p[2]?' ('+p[2]+')':'')+'</title></circle>';});
+ var lp=o.pts[o.pts.length-1];s+='<text x="'+Math.min(X(lp[0])+6,W-R-30)+'" y="'+(Y(lp[1])-6)+'" font-size="10" font-weight="700" fill="'+o.color+'">'+lp[1]+'</text>';
+ return s+'</svg>';}
+function render(el,b,p){css();var hm=(p.height_cm||179)/100,G=p.goals||{},gw=G.weight_kg||80,gb=G.bmi||25,gf=G.fat_pct||20,ms=(b.measures||[]).slice().sort(function(a,c){return a.date-c.date;});
+ var W=ms.filter(function(m){return m.weight_kg;}).map(function(m){return [m.date*1000,m.weight_kg,m.source==="dexa"?"DEXA":0];}),F=ms.filter(function(m){return m.fat_pct;}).map(function(m){return [m.date*1000,m.fat_pct,m.source==="dexa"?"DEXA":0];});
+ if(!W.length){el.innerHTML='<div class="pg"><h3>Progress to goal</h3><p class="sub">No weigh-ins yet. <a href="withings.html">Connect Withings</a></p></div>';return;}
+ var Bm=W.map(function(x){return [x[0],+(x[1]/hm/hm).toFixed(1),x[2]];}),last=W[W.length-1],cw=last[1],cb=cw/hm/hm,start=W[0][1],toGo=Math.max(0,cw-gw),pct=Math.max(0,Math.min(100,(start-cw)/(start-gw)*100));
+ var span=(last[0]-W[0][0])/864e5,proj=null,eta="";
+ if(span>=14){var r=lin(W.map(function(x){return [x[0],x[1]];}));if(r&&r.a<0){var tg=(gw-r.b)/r.a,t1=Math.min(tg,last[0]+180*864e5);proj={t0:last[0],v0:+(r.a*last[0]+r.b).toFixed(1),t1:t1,v1:+(r.a*t1+r.b).toFixed(1)};eta=(r.a*7*864e5).toFixed(2)+' kg/week · goal ~'+new Date(tg).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});}else if(r)eta="Trend flat or rising – no goal date yet";}
+ var cat=cb<18.5?"Under":cb<25?"Healthy":cb<30?"Overweight":"Obese",lf=F.length?F[F.length-1][1]:null;
+ var bp=proj&&{t0:proj.t0,v0:+(proj.v0/hm/hm).toFixed(1),t1:proj.t1,v1:+(proj.v1/hm/hm).toFixed(1)};
+ el.innerHTML='<div class="pg"><h3>Progress to goal</h3><p class="sub">Latest '+new Date(last[0]).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+' · height '+(hm*100).toFixed(1)+' cm (DEXA)</p>'+
+ '<div class="pgt"><div><span>Weight</span><b>'+cw.toFixed(1)+' kg</b></div><div><span>BMI</span><b>'+cb.toFixed(1)+'</b><small>'+cat+'</small></div><div><span>To goal</span><b>'+toGo.toFixed(1)+' kg</b></div><div><span>Body fat</span><b>'+(lf!=null?lf+'%':'–')+'</b></div></div>'+
+ '<div style="font-size:12px;display:flex;justify-content:space-between"><span>'+start.toFixed(1)+' kg start</span><span>'+pct.toFixed(0)+'% there</span><span>'+gw+' kg goal</span></div><div class="pgbar"><i style="width:'+Math.max(pct,2)+'%"></i></div>'+
+ '<div class="pgc"><h4>Weight <small>'+(eta||'trend line after 2 weeks of data ('+Math.floor(span)+' d so far)')+'</small></h4>'+chart({pts:W,goal:gw,unit:" kg",color:"#6366f1",proj:proj,dp:0})+'</div>'+
+ '<div class="pgc"><h4>BMI <small>goal '+gb.toFixed(1)+'</small></h4>'+chart({pts:Bm,goal:gb,unit:"",color:"#0ea5e9",proj:bp,dp:1,min:22,max:32,bands:[[18.5,25,"#10b981","Healthy"],[25,30,"#f59e0b","Overweight"],[30,99,"#ef4444","Obese"]]})+'</div>'+
+ (F.length?'<div class="pgc"><h4>Body fat % <small>goal ~'+gf+'%</small></h4>'+chart({pts:F,goal:gf,unit:"%",color:"#f97316",dp:0,min:18})+'</div>':'')+
+ '<p class="pgl">Hollow dots = DEXA scan. Data loads from your private repo only.</p></div>';}
+window.renderProgress=render;
+function run(){var el=document.getElementById("bodyCard"),t=localStorage.getItem("gct-token");if(!el||!t||done)return;done=true;
+ function get(f){return fetch(API+f,{headers:{"Authorization":"Bearer "+t,"Accept":RAW},cache:"no-store"}).then(function(r){return r.status===404?{}:r.ok?r.json():null;});}
+ Promise.all([get("body.json"),get("profile.json")]).then(function(a){if(!a[0])return;
+  if(!a[0].measures){el.innerHTML='<div class="box"><h3>Body (Withings)</h3><p class="mut">Not connected yet. <a href="withings.html">Connect Withings</a></p></div>';return;}render(el,a[0],a[1]||{});}).catch(function(){});}
 setInterval(run,1000);})();
 </script>
 </body>
