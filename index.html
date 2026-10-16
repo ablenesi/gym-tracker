@@ -323,7 +323,7 @@ var DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Apr"
 function nice(s){var d=new Date(s+"T12:00:00");return DOW[d.getDay()]+" "+d.getDate()+" "+MON[d.getMonth()]+" "+d.getFullYear();}
 // Build 36 sessions
 var SESS=[{date:"2026-10-10",day:"A",week:0,ex:EX.A}];(function(){var d=new Date(2026,9,12,12),end=new Date(2026,9,12+84,12),k=1,t0=new Date(2026,9,12,12);
- while(d<end){var w=d.getDay();if(w===1||w===3||w===5){var day="ABC"[k%3];SESS.push({date:iso(d),day:day,week:Math.floor(Math.round((d-t0)/864e5)/7)+1,ex:EX[day]});k++;}d.setDate(d.getDate()+1);}})();
+ while(d<end){var w=d.getDay();if(w===1||w===3||w===5){var day="ABC"[(iso(d)>="2026-10-16"?k+2:k)%3];SESS.push({date:iso(d),day:day,week:Math.floor(Math.round((d-t0)/864e5)/7)+1,ex:EX[day]});k++;}d.setDate(d.getDate()+1);}})();
 
 (function(){var d=new Date(2026,9,13,12),end=new Date(2027,0,2,12),t0=new Date(2026,9,12,12);
  while(d<=end){var w=d.getDay(),ty=w===2?"P":w===4?"Y":w===6?"K":null;
@@ -335,6 +335,7 @@ var SESS=[{date:"2026-10-10",day:"A",week:0,ex:EX.A}];(function(){var d=new Date
 var MOUNJARO_FROM="2026-10-14",MOUNJARO_TO="2026-12-30"; // weekly shot: every Wednesday in this range (inclusive)
 var MOUNJARO_DATES=(function(){var out=[],d=new Date(MOUNJARO_FROM+"T12:00:00Z"),end=new Date(MOUNJARO_TO+"T12:00:00Z");while(d.getUTCDay()!==3)d.setUTCDate(d.getUTCDate()+1);for(;d<=end;d.setUTCDate(d.getUTCDate()+7))out.push(d.toISOString().slice(0,10));return out;})();
 var SPECIAL={"2026-10-10":{cls:"first",icon:"🌱",sets:2,safeSug:true,text:"First day back – easy, after DEXA. ~45–60 min: 2 sets each, light weights, stop well short of failure."}};
+SPECIAL["2026-10-16"]={cls:"first",icon:"🌱",sets:2,safeSug:true,text:"Catch-up Session C (missed Wednesday), gentle version: 2 sets each, stop well short of failure, rest 2–3 min. Mounjaro week: eat something light ~1 h before and bring water. Feel queasy? Stop after the first 4 exercises and stretch – still a win. Starting weights: hack squat/leg press ~10 kg on the sled, incline DB press 6 kg, chest-supported row 8 kg, single-arm DB row 8 kg, walking lunges bodyweight, cable curl 7.5 kg, tricep pushdown 10 kg, stair climber 5 min easy."};
 MOUNJARO_DATES.forEach(function(d){SPECIAL[d]={cls:"jab",icon:"💉",text:"Mounjaro day: take your shot this evening, after the workout."};});
 if(SPECIAL["2026-10-14"])SPECIAL["2026-10-14"].text+=" Still sore from week 1: normal session, but rest 2–3 min between sets, sip water every set, eat a light meal 2–3 h before, and stop any set 2 reps short of failure. Feel sick or dizzy? Sit down and end the session.";
 SESS.forEach(function(s){var sp=SPECIAL[s.date];if(!sp)return;s.special=sp;if(sp.sets&&!s.kind)s.ex=s.ex.map(function(x){return [x[0],x[1],Math.min(x[2],sp.sets)];});});
