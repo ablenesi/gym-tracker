@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connect Withings</title><meta name="robots" content="noindex">
+<style>body{font:16px system-ui,sans-serif;max-width:560px;margin:24px auto;padding:0 16px;background:#0f1115;color:#e8e8e8}input,button{font:inherit;width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #444;background:#1a1d24;color:inherit;box-sizing:border-box}button{background:#2d6cdf;border:0;cursor:pointer}.mut{color:#9aa;font-size:14px}#st{margin-top:14px}</style></head><body>
+<h2>Connect Withings</h2>
+<p class="mut">One-off. Your Withings keys stay in this browser; the connection is saved only to your private repo ablenesi/gym-tracker-data. You must be signed in on the <a href="./">synced tracker</a> on this device first.</p>
+<label>Withings Client ID<input id="cid" autocomplete="off"></label>
+<label>Withings Consumer Secret<input id="sec" type="password" autocomplete="off"></label>
+<button id="go">Connect Withings</button><div id="st"></div>
+<script>
+var CB=location.origin+location.pathname,REPO="ablenesi/gym-tracker-data",st=document.getElementById("st");
+var gh=localStorage.getItem("gct-token");
+function say(t){st.textContent=t;}
+document.getElementById("cid").value=localStorage.getItem("wt-cid")||"";
+document.getElementById("sec").value=localStorage.getItem("wt-sec")||"";
+if(!gh)say("Sign in on the synced tracker page first (GitHub token missing on this device).");
+document.getElementById("go").onclick=function(){
+ var c=document.getElementById("cid").value.trim(),s=document.getElementById("sec").value.trim();
+ if(!c||!s)return say("Enter both keys.");
+ localStorage.setItem("wt-cid",c);localStorage.setItem("wt-sec",s);
+ var state=Math.random().toString(36).slice(2);sessionStorage.setItem("wt-state",state);
+ location.href="https://account.withings.com/oauth2_user/authorize2?"+new URLSearchParams({response_type:"code",client_id:c,scope:"user.info,user.metrics",redirect_uri:CB,state:state});
+};
+var p=new URLSearchParams(location.search),code=p.get("code");
+if(code){
+ history.replaceState(null,"",CB);
+ if(p.get("state")!==sessionStorage.getItem("wt-state"))say("State mismatch - press Connect again.");
+ else{say("Exchanging code…");
+  fetch("https://wbsapi.withings.net/v2/oauth2",{method:"POST",body:new URLSearchParams({action:"requesttoken",grant_type:"authorization_code",client_id:localStorage.getItem("wt-cid"),client_secret:localStorage.getItem("wt-sec"),code:code,redirect_uri:CB})})
+  .then(function(r){return r.json();}).then(function(j){
+   if(j.status!==0)throw new Error("Withings error "+j.status+" "+(j.error||""));
+   var api="https://api.github.com/repos/"+REPO+"/contents/withings-token.json",h={"Authorization":"Bearer "+gh,"Accept":"application/vnd.github+json"};
+   var content=btoa(JSON.stringify({refresh_token:j.body.refresh_token,userid:j.body.userid,updated:Math.floor(Date.now()/1000)},null,1));
+   return fetch(api,{headers:h,cache:"no-store"}).then(function(r){return r.ok?r.json():{};}).then(function(f){
+    return fetch(api,{method:"PUT",headers:h,body:JSON.stringify({message:"Connect Withings",content:content,sha:f.sha})});
+   });
+  }).then(function(r){if(!r.ok)throw new Error("GitHub save failed ("+r.status+")");
+   say("Connected ✓ First import runs in a minute; after that every 3 hours. Body chart appears on the Progress tab.");
+  }).catch(function(e){say(e.message+" - press Connect again (the code is only valid 30 s).");});
+ }
+}else if(p.get("error"))say("Withings: "+p.get("error"));
+</script></body></html>

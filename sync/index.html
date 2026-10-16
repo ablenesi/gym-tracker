@@ -286,6 +286,7 @@ html.caninst.showhint .insthint{display:block}
     <div id="sessions"></div>
   </section>
   <section class="view" id="v-progress">
+    <div id="bodyCard"></div>
     <div id="progress"></div>
   </section>
   <section class="view" id="v-help">
@@ -906,6 +907,19 @@ else{
   if(dp){dp.prompt();dp.userChoice.then(function(r){if(r&&r.outcome==="accepted")off();dp=null;});}
   else de.classList.toggle("showhint");});
 })();
+</script>
+<script>
+(function(){var done=false;function run(){var el=document.getElementById("bodyCard"),t=localStorage.getItem("gct-token");if(!el||!t||done)return;done=true;
+fetch("https://api.github.com/repos/ablenesi/gym-tracker-data/contents/body.json",{headers:{"Authorization":"Bearer "+t,"Accept":"application/vnd.github.raw+json"},cache:"no-store"}).then(function(r){
+ if(r.status===404){el.innerHTML='<div class="box"><h3>Body (Withings)</h3><p class="mut">Not connected yet. <a href="withings.html">Connect Withings</a></p></div>';return null;}
+ return r.ok?r.json():null;}).then(function(b){if(!b||!b.measures)return;var m=b.measures.filter(function(x){return x.weight_kg;});if(!m.length)return;
+ var L=m[m.length-1],W=320,H=110,ws=m.map(function(x){return x.weight_kg;}),mn=Math.min.apply(0,ws)-0.5,mx=Math.max.apply(0,ws)+0.5,t0=m[0].date,t1=Math.max(L.date,t0+1);
+ var pts=m.map(function(x){return ((x.date-t0)/(t1-t0)*(W-10)+5).toFixed(1)+","+(H-5-(x.weight_kg-mn)/(mx-mn)*(H-10)).toFixed(1);}).join(" ");
+ function f(v,u){return v==null?"–":v+u;}
+ el.innerHTML='<div class="box"><h3>Body (Withings)</h3><p>'+new Date(L.date*1000).toLocaleDateString("en-GB")+': <b>'+f(L.weight_kg," kg")+'</b> · fat '+f(L.fat_pct,"%")+' · muscle '+f(L.muscle_pct,"%")+(L.hr_bpm?' · HR '+L.hr_bpm+' bpm':'')+'</p>'+
+ (m.length>1?'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto"><polyline fill="none" stroke="currentColor" stroke-width="2" points="'+pts+'"/></svg><p class="mut" style="font-size:12px">Weight '+mn.toFixed(1)+'–'+mx.toFixed(1)+' kg, '+m.length+' weigh-ins</p>':'')+'</div>';
+ }).catch(function(){});}
+setInterval(run,1000);})();
 </script>
 </body>
 </html>
