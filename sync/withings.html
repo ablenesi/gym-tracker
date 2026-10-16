@@ -2,7 +2,7 @@
 <title>Connect Withings</title><meta name="robots" content="noindex">
 <style>body{font:16px system-ui,sans-serif;max-width:560px;margin:24px auto;padding:0 16px;background:#0f1115;color:#e8e8e8}input,button{font:inherit;width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #444;background:#1a1d24;color:inherit;box-sizing:border-box}button{background:#2d6cdf;border:0;cursor:pointer}.mut{color:#9aa;font-size:14px}#st{margin-top:14px}</style></head><body>
 <h2>Connect Withings</h2>
-<p class="mut">One-off. Your Withings keys stay in this browser; the connection is saved only to your private repo ablenesi/gym-tracker-data. You must be signed in on the <a href="./">synced tracker</a> on this device first.</p>
+<p class="mut">One-off. Your Withings keys and the connection are saved only to your private repo ablenesi/gym-tracker-data. You must be signed in on the <a href="./">synced tracker</a> on this device first.</p>
 <label>Withings Client ID<input id="cid" autocomplete="off"></label>
 <label>Withings Consumer Secret<input id="sec" type="password" autocomplete="off"></label>
 <button id="go">Connect Withings</button><div id="st"></div>
@@ -29,7 +29,7 @@ if(code){
   .then(function(r){return r.json();}).then(function(j){
    if(j.status!==0)throw new Error("Withings error "+j.status+" "+(j.error||""));
    var api="https://api.github.com/repos/"+REPO+"/contents/withings-token.json",h={"Authorization":"Bearer "+gh,"Accept":"application/vnd.github+json"};
-   var content=btoa(JSON.stringify({refresh_token:j.body.refresh_token,userid:j.body.userid,updated:Math.floor(Date.now()/1000)},null,1));
+   var content=btoa(JSON.stringify({client_id:localStorage.getItem("wt-cid"),client_secret:localStorage.getItem("wt-sec"),refresh_token:j.body.refresh_token,userid:j.body.userid,updated:Math.floor(Date.now()/1000)},null,1));
    return fetch(api,{headers:h,cache:"no-store"}).then(function(r){return r.ok?r.json():{};}).then(function(f){
     return fetch(api,{method:"PUT",headers:h,body:JSON.stringify({message:"Connect Withings",content:content,sha:f.sha})});
    });
